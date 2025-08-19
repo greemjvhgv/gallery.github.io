@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Upload Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg">
+
+  <form class="form">
+    <a href="main.html" class="back-link">Back to Gallery</a>
+    <h1>Upload a Photo</h1>
+
+    <input type="file" id="fileInput" />
+    <img id="preview" src="" alt="Preview will appear here" />
+
+    <input type="text" id="tagsInput" class="tagsinput" placeholder="Enter Tag Here"/>
+
+    <button id="uploadBtn" type="button" onclick="uploadImage()" class="button">Upload</button>
+    <div id="loader" class="loader" style="display: none;"></div>
+    <p id="uploadmessage"></p>
+  </form>
+
+</body>
+
+<script>
+   const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
+   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
+   const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const loader = document.getElementById('loader');
+    const uploadBtn = document.getElementById('uploadBtn')
+    const tagsInput = document.getElementById('tagsInput');
+    const UploadMessage = document.getElementById('uploadmessage');
+    let selectedFile = null;
+
+    fileInput.addEventListener('change', (event) => {
+      UploadMessage.innerHTML = "";
+      selectedFile = event.target.files[0];
+      if (selectedFile) {
+        preview.src = URL.createObjectURL(selectedFile);
+      }
+    });
+
+      async function uploadImage() {
+        if (!selectedFile) {
+          alert("Please select a file first!");
+          return;
+        }
+        const filePath = `uploads/${Date.now()}_${selectedFile.name}`;
+
+        loader.style.display = "block";
+        UploadMessage.textContent = "";
+
+        const { data, error: uploadError } = await supabase
+          .storage
+          .from('images')
+          .upload(filePath, selectedFile);
+
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          return;
+        }
+
+        const { data: publicUrlData } = supabase
+          .storage
+          .from("images")
+          .getPublicUrl(filePath);
+
+        const publicUrl = publicUrlData.publicUrl;
+
+        const tags = document.getElementById('tagsInput').value
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean);
+
+        const { error: insertError } = await supabase
+        .from('photos')
+        .insert([{ image_url: publicUrl, tags: tags }]);
+
+        if (insertError) {
+          console.error('Error inserting URL into database:', insertError);
+          return;
+        }
+
+
+        loader.style.display = "none";
+        UploadMessage.innerHTML = "- - - - Uploaded! - - - -";
+        document.getElementById('tagsInput').value = "";
+        selectedFile = null
+  }
+</script>
+</html>

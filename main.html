@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Main Page</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="mainbody">  
+  <h1>My Photo Gallery</h1>
+  <a href="upload.html"><button class="button">Upload New Photo</button></a>
+  
+  <div id="gallery"></div>
+  <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
+</body>
+
+  <script>
+    const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const mybutton = document.getElementById("myBtn");
+    const gallery = document.getElementById('gallery');
+
+    window.onscroll = function() {scrollFunction()};
+
+   async function scrollFunction() {
+      if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
+        mybutton.style.display = "block";
+      } else {
+        mybutton.style.display = "none";
+      }
+    }
+
+   async function topFunction() {
+      document.documentElement.scrollTop = 0; 
+    }
+
+    async function loadPhotos() {
+
+      const { data, error } = await supabase
+        .from('photos')
+        .select();
+
+      if (error) {
+        console.error('Error loading photos:', error);
+        return;
+      }
+
+  data.forEach(photo => {
+        const container = document.createElement('div');
+        container.classList.add('photo-container');
+
+        const img = document.createElement('img');
+        img.src = photo.image_url;
+        img.style.width = '237px';
+        img.style.margin = '5px';
+        img.style.marginBottom = '2px';
+
+        const button = document.createElement('button');
+        button.textContent = "delete";
+        button.addEventListener("click", () => {
+          deletePhoto(photo)
+        })
+
+        const tooltip = document.createElement('div');
+        tooltip.classList.add('tags-tooltip');
+        tooltip.classList.add('tags-overlay');
+        let tagsArray = [];
+        if (Array.isArray(photo.tags)) {
+         tagsArray = photo.tags.map(t => t.toLowerCase());
+        } else if (typeof photo.tags === 'string' && photo.tags.trim() !== '') {
+          tagsArray = photo.tags
+          .split(',')
+          .map(t => t.trim().toLowerCase())
+          .filter(Boolean);
+        }
+        tooltip.textContent = tagsArray.length ? tagsArray.join(', ') : 'No tags';
+
+        container.appendChild(img);
+        container.appendChild(tooltip);
+        container.appendChild(button);
+        gallery.appendChild(container);
+      });
+  }
+
+  async function deletePhoto(photo) {
+        const filePath = photo.image_url.split('/storage/v1/object/public/images/')[1];
+
+        // Delete from storage bucket
+        const { error: storageError } = await supabase.storage
+          .from('images') 
+          .remove([filePath]);
+
+        // Delete row from database
+        const { error: dbError } = await supabase
+          .from('photos')
+          .delete()
+          .eq('id', photo.id);
+
+        const container = document.querySelector(`img[src="${photo.image_url}"]`).parentElement;
+        container.remove();
+
+  }
+
+    loadPhotos();
+  </script>
+</html>
