@@ -97,7 +97,7 @@
     }
 
     .photo-container:hover {
-      transform: translateY(5px);
+      transform: translateY(9px);
     }
 
     #myBtn {
@@ -147,7 +147,7 @@
     }
 
     .tags-overlay{
-     position: absolute;
+      position: absolute;
       bottom: 0;
       left: 0;
       width: 100%;
@@ -155,8 +155,8 @@
       color: white;
       padding: 4px;
       text-align: center;
-      font-size: 15px;
-      font-weight: 750;
+      font-size: 13px;
+      font-weight: 550;
       opacity: 0;
       pointer-events: none;
     }
