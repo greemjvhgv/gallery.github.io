@@ -28,9 +28,6 @@
     const groupgallery = document.getElementById('groupgallery');
 
     window.onscroll = function () { scrollFunction() };
-    const selectedImages = new Set();
-    let profile = null;
-    let banner = null;
 
     async function scrollFunction() {
         if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
@@ -40,8 +37,11 @@
         }
     }
 
-    async function topFunction() {
+    topBtn.addEventListener("click", topFunction);
+
+    function topFunction() {
         document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
     }
 
     async function loadGroups() {
