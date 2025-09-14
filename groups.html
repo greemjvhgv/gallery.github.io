@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Group Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="mainbody">
+
+    <h1 id="h1">Groups Gallery</h1>
+    <div class="navbar">
+        <a href="index.html">Gallery</a>
+        <a href="group.html" class="active">Group Gallery</a>
+    </div>
+    <div id="groupgallery"></div>
+    <button onclick="topFunction()" id="topBtn">Top</button>
+
+</body>
+
+<script>
+    const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const topBtn = document.getElementById("topBtn");
+    const groupgallery = document.getElementById('groupgallery');
+
+    window.onscroll = function () { scrollFunction() };
+    const selectedImages = new Set();
+    let profile = null;
+    let banner = null;
+
+    async function scrollFunction() {
+        if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
+            topBtn.style.display = "block";
+        } else {
+            topBtn.style.display = "none";
+        }
+    }
+
+    async function topFunction() {
+        document.documentElement.scrollTop = 0;
+    }
+
+    async function loadGroups() {
+
+        const { data, error } = await supabase
+            .from('groups')
+            .select();
+
+        if (error) {
+            console.error('Error loading photos:', error);
+            return;
+        }
+
+
+        data.forEach(group => {
+            const container = document.createElement("div");
+            container.classList.add("group-container");
+
+            const profileDiv = document.createElement('div');
+            profileDiv.className = 'profile-div';
+            const profileImg = document.createElement('img');
+            profileImg.className = 'profileImg';
+            profileImg.src = group.profile_url;
+
+            const bannerDiv = document.createElement('div');
+            bannerDiv.className = 'banner-div';
+            const bannerImg = document.createElement('img');
+            bannerImg.className = 'bannerImg';
+            bannerImg.src = group.banner_url;
+
+            const button = document.createElement('button');
+            button.className = "del";
+            button.textContent = "delete";
+            button.addEventListener("click", () => {
+                deleteGroup(group)
+            });
+
+
+            bannerDiv.appendChild(bannerImg);
+            profileDiv.appendChild(profileImg);
+            container.appendChild(button);
+            container.appendChild(bannerDiv);
+            container.appendChild(profileDiv);
+            groupgallery.appendChild(container);
+        });
+    }
+
+    async function deleteGroup(group) {
+        const { error } = await supabase
+            .from('groups')
+            .delete()
+            .eq('id', group.id);
+
+        if (error) {
+            console.error('Error deleting group:', error);
+            alert('Failed to delete group!');
+            return;
+        }
+
+        const container = document.querySelector(`.group-container img[src="${group.profile_url}"]`).parentElement.parentElement;
+        container.remove();
+    }
+
+    loadGroups();
+</script>
+
+</html>

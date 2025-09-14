@@ -1,108 +1,250 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Main Page</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="mainbody">  
-  <h1>My Photo Gallery</h1>
-  <a href="upload.html"><button class="button">Upload New Photo</button></a>
-  
+<body class="mainbody">
+
+  <h1 id="h1">My Photo Gallery</h1>
+  <div class="navbar">
+    <a href="index.html" class="active">Gallery</a>
+    <a href="upload.html">Upload Image</a>
+    <a href="#" id="enableGroupModeBtn">Group Mode</a>
+    <a href="groups.html">Group Gallery</a>
+  </div>
+
+  <h2 id="h2"></h2>
+
   <div id="gallery"></div>
-  <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
+
+  <button id="groupBtn" style="display: none;">Group</button>
+  <form>
+    <div id="id01" class="modal" style="display: none;">
+      <div class="modal-content animate">
+        <button type="button" onclick="document.getElementById('id01').style.display='none'"
+          class="cancelbtn">&times;</button>
+        <div id="formHeader">
+          <div id="loader" class="loader" style="display: none;"></div>
+          <p id="uploadmessage" style="font-size: 25px;"></p>
+          <h2>Are you happy with this group?</h2>
+        </div>
+        <button id="confirmBtn" onclick="confirmGroup()" type="button">Confirm</button>
+        <div class="row">
+          <div class=" column">
+            <div class="container" id="profileContainer"
+              style="display: flex; flex-direction: column; align-items: center;">
+            </div>
+          </div>
+          <div class=" column">
+            <div class="container" id="bannerContainer"
+              style="display: flex; flex-direction: column; align-items: center;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <button onclick="topFunction()" id="topBtn">Top</button>
+
 </body>
 
-  <script>
-    const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+<script>
+  const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    const mybutton = document.getElementById("myBtn");
-    const gallery = document.getElementById('gallery');
+  const topBtn = document.getElementById("topBtn");
+  const gallery = document.getElementById('gallery');
+  const loader = document.getElementById('loader');
+  const UploadMessage = document.getElementById('uploadmessage');
 
-    window.onscroll = function() {scrollFunction()};
+  window.onscroll = function () { scrollFunction() };
+  const selectedImages = new Set();
+  let profile = null;
+  let banner = null;
 
-   async function scrollFunction() {
-      if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
-        mybutton.style.display = "block";
-      } else {
-        mybutton.style.display = "none";
-      }
+  async function scrollFunction() {
+    if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
+      topBtn.style.display = "block";
+    } else {
+      topBtn.style.display = "none";
+    }
+  }
+
+  async function topFunction() {
+    document.documentElement.scrollTop = 0;
+  }
+
+  async function loadPhotos() {
+
+    const { data, error } = await supabase
+      .from('photos')
+      .select();
+
+    if (error) {
+      console.error('Error loading photos:', error);
+      return;
     }
 
-   async function topFunction() {
-      document.documentElement.scrollTop = 0; 
-    }
+    const maxSelections = 2;
+    const checkboxes = [];
 
-    async function loadPhotos() {
+    data.forEach(photo => {
+      const container = document.createElement('div');
+      container.classList.add('photo-container');
 
-      const { data, error } = await supabase
-        .from('photos')
-        .select();
+      const img = document.createElement('img');
+      img.src = photo.image_url;
+      img.style.width = '240px';
+      img.style.margin = '5px';
+      img.style.marginBottom = '2px';
 
-      if (error) {
-        console.error('Error loading photos:', error);
-        return;
-      }
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.style.display = 'none';
+      checkbox.classList.add("group-checkbox");
+      checkboxes.push(checkbox);
 
-  data.forEach(photo => {
-        const container = document.createElement('div');
-        container.classList.add('photo-container');
+      checkbox.addEventListener('change', function () {
+        const checkedCount = checkboxes.filter(cb => cb.checked).length;
+        if (checkedCount > maxSelections) {
+          this.checked = false;
+          return;
+        }
+        if (checkbox.checked) {
+          selectedImages.add(photo.image_url);
+          console.log(photo.id, photo.image_url)
+          console.log(Array.from(selectedImages))
+        } else {
+          selectedImages.delete(photo.image_url);
+        }
+        toggleGroupButton();
+      });
 
-        const img = document.createElement('img');
-        img.src = photo.image_url;
-        img.style.width = '237px';
-        img.style.margin = '5px';
-        img.style.marginBottom = '2px';
+      const button = document.createElement('button');
+      button.textContent = "delete";
+      button.addEventListener("click", () => {
+        deletePhoto(photo)
+      })
 
-        const button = document.createElement('button');
-        button.textContent = "delete";
-        button.addEventListener("click", () => {
-          deletePhoto(photo)
-        })
-
-        const tooltip = document.createElement('div');
-        tooltip.classList.add('tags-tooltip');
-        tooltip.classList.add('tags-overlay');
-        let tagsArray = [];
-        if (Array.isArray(photo.tags)) {
-         tagsArray = photo.tags.map(t => t.toLowerCase());
-        } else if (typeof photo.tags === 'string' && photo.tags.trim() !== '') {
-          tagsArray = photo.tags
+      const tooltip = document.createElement('div');
+      tooltip.classList.add('tags-tooltip');
+      tooltip.classList.add('tags-overlay');
+      let tagsArray = [];
+      if (Array.isArray(photo.tags)) {
+        tagsArray = photo.tags.map(t => t.toLowerCase());
+      } else if (typeof photo.tags === 'string' && photo.tags.trim() !== '') {
+        tagsArray = photo.tags
           .split(',')
           .map(t => t.trim().toLowerCase())
           .filter(Boolean);
-        }
-        tooltip.textContent = tagsArray.length ? tagsArray.join(', ') : 'No tags';
+      }
+      tooltip.textContent = tagsArray.length ? tagsArray.join(', ') : 'No tags';
 
-        container.appendChild(img);
-        container.appendChild(tooltip);
-        container.appendChild(button);
-        gallery.appendChild(container);
-      });
+      container.appendChild(img);
+      container.appendChild(tooltip);
+      container.appendChild(button);
+      container.appendChild(checkbox);
+      gallery.appendChild(container);
+    });
   }
+
+  const groupBtn = document.getElementById("groupBtn");
 
   async function deletePhoto(photo) {
-        const filePath = photo.image_url.split('/storage/v1/object/public/images/')[1];
+    const filePath = photo.image_url.split('/storage/v1/object/public/images/')[1];
 
-        // Delete from storage bucket
-        const { error: storageError } = await supabase.storage
-          .from('images') 
-          .remove([filePath]);
+    const { error: storageError } = await supabase.storage
+      .from('images')
+      .remove([filePath]);
 
-        // Delete row from database
-        const { error: dbError } = await supabase
-          .from('photos')
-          .delete()
-          .eq('id', photo.id);
+    const { error: dbError } = await supabase
+      .from('photos')
+      .delete()
+      .eq('id', photo.id);
 
-        const container = document.querySelector(`img[src="${photo.image_url}"]`).parentElement;
-        container.remove();
-
+    const container = document.querySelector(`img[src="${photo.image_url}"]`).parentElement;
+    container.remove();
   }
 
-    loadPhotos();
-  </script>
+  const groupModeBtn = document.getElementById('enableGroupModeBtn');
+  let groupModeEnabled = false;
+
+  groupModeBtn.onclick = function (e) {
+    e.preventDefault();
+    groupModeEnabled = !groupModeEnabled;
+
+    if (groupModeEnabled) {
+      groupModeBtn.classList.add('active');
+      document.querySelectorAll('.group-checkbox').forEach(cb => cb.style.display = 'block');
+      document.getElementById('groupBtn').style.display = 'block';
+      h1.innerHTML = "Group Mode";
+      h2.innerHTML = 'Select 2 Images to group together. The first selected image will be the profile picture, the second the banner picture';
+    } else {
+      groupModeBtn.classList.remove('active');
+      document.querySelectorAll('.group-checkbox').forEach(cb => {
+        cb.style.display = 'none';
+        cb.checked = false;
+      });
+      document.getElementById('groupBtn').style.display = 'none';
+      selectedImages.clear();
+      h1.innerHTML = "My Photo Gallery";
+      h2.innerHTML = "";
+      document.getElementById('id01').style.display = 'none';
+    }
+    toggleGroupButton();
+  };
+
+
+
+  async function toggleGroupButton() {
+    if (selectedImages.size === 2) {
+      groupBtn.style.display = "block";
+      UploadMessage.textContent = "";
+      groupBtn.onclick = function () {
+        const urls = Array.from(selectedImages);
+        profile = urls[0];
+        banner = urls[1];
+
+        document.getElementById('profileContainer').innerHTML = `
+        <h3>Profile</h3>
+        <img src="${profile}" style="width:200px; border:3px solid #ffffff;">`;
+        document.getElementById('bannerContainer').innerHTML = `
+        <h3>Banner</h3>
+        <img src="${banner}" style="width:200px; border:3px solid #ffffff;">`;
+        console.log(profile, banner);
+
+        document.getElementById('id01').style.display = 'flex';
+      };
+    } else {
+      groupBtn.style.display = "none";
+      document.getElementById('id01').style.display = 'none';
+    }
+  }
+
+  async function confirmGroup() {
+    loader.style.display = "block";
+    const { data, error } = await supabase
+      .from('groups')
+      .insert([{ profile_url: profile, banner_url: banner }]);
+
+    if (error) {
+      console.error('Error inserting URLs into database:', error);
+      alert('Failed to save group!');
+      return;
+    }
+    loader.style.display = "none";
+    UploadMessage.innerHTML = "- - - - Uploaded! - - - -";
+    document.getElementById('id01').style.display = 'flex';
+    selectedImages.clear();
+  }
+
+  loadPhotos();
+</script>
+
 </html>
