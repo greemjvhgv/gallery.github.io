@@ -76,10 +76,12 @@
     }
   }
 
-  async function topFunction() {
-    document.documentElement.scrollTop = 0;
-  }
+  topBtn.addEventListener("click", topFunction);
 
+  function topFunction() {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
   async function loadPhotos() {
 
     const { data, error } = await supabase
