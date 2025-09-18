@@ -71,6 +71,10 @@
     </div>
   </div>
 
+  <div id="myModal" class="modal" style="display: none;">
+    <img class="modal-content" id="img01">
+  </div>
+
   <button onclick="topFunction()" id="topBtn">Top</button>
 
 </body>
@@ -97,6 +101,9 @@
   const logoutBtn = document.getElementById('logoutBtn');
   const groupBtn = document.getElementById("groupBtn");
   const groupModeBtn = document.getElementById('enableGroupModeBtn');
+  const imageModal = document.getElementById('myModal');
+  const modalImg = document.getElementById("img01");
+
 
   window.onscroll = function () { scrollFunction() };
   const selectedImages = new Set();
@@ -118,6 +125,7 @@
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }
+
 
 
   //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
@@ -193,6 +201,12 @@
       img.style.margin = '5px';
       img.style.marginBottom = '2px';
 
+      img.onclick = function () {
+        imageModal.style.display = "block";
+        modalImg.src = this.src;
+        modalImg.alt = this.alt || "";
+      };
+
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.style.display = 'none';
@@ -245,6 +259,13 @@
     const { data: { session } } = await supabase.auth.getSession();
     updateUIForAuth(session);
   }
+
+
+  imageModal.onclick = function (e) {
+    if (e.target === imageModal) {
+      imageModal.style.display = "none";
+    }
+  };
 
 
   async function deletePhoto(photo) {
