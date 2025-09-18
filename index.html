@@ -1,4 +1,3 @@
-
 <html>
 
 <head>
@@ -10,17 +9,20 @@
 <body class="mainbody">
 
   <h1 id="h1">My Photo Gallery</h1>
-  <div class="navbar">
+  <div id="navbar" class="navbar">
     <a href="index.html" class="active">Gallery</a>
     <a href="upload.html">Upload Image</a>
     <a href="#" id="enableGroupModeBtn">Group Mode</a>
     <a href="groups.html">Group Gallery</a>
+    <button id="logoutBtn">Logout</button>
   </div>
+  <button onclick="document.getElementById('loginModal').style.display='flex'" id="loginBtn">Login</button>
 
   <h2 id="h2"></h2>
 
   <div id="gallery"></div>
 
+  <!--GROUP STUFF-->
   <button id="groupBtn" style="display: none;">Group</button>
   <form>
     <div id="id01" class="modal" style="display: none;">
@@ -49,6 +51,26 @@
     </div>
   </form>
 
+  <!--LOGIN STUFF-->
+  <div id="loginModal" class="modal" style="display: none;">
+    <div class="modal-content animate">
+      <span onclick="document.getElementById('loginModal').style.display='none'" class="cancelbtn"
+        style="cursor: pointer;">&times;</span>
+      <form id="loginForm">
+        <div class="container">
+          <label for="email"><b>Email</b></label>
+          <input type="text" placeholder="Enter Email" id="email" required>
+          <br />
+          <label for="password"><b>Password</b></label>
+          <input type="password" placeholder="Enter Password" id="password" required>
+        </div>
+        <br />
+        <button type="submit">Login</button>
+      </form>
+      <p id="auth-status" style="text-align: center; margin-top: 10px;"></p>
+    </div>
+  </div>
+
   <button onclick="topFunction()" id="topBtn">Top</button>
 
 </body>
@@ -59,14 +81,29 @@
   const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
   const topBtn = document.getElementById("topBtn");
+  const modal = document.getElementById('loginModal');
   const gallery = document.getElementById('gallery');
   const loader = document.getElementById('loader');
   const UploadMessage = document.getElementById('uploadmessage');
+  const loginForm = document.getElementById('loginForm');
+  const loginBtn = document.getElementById('loginBtn');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const loginModal = document.getElementById('loginModal');
+  const authStatus = document.getElementById('auth-status');
+  const navbar = document.querySelector('.navbar');
+  const h1 = document.getElementById('h1');
+  const h2 = document.getElementById('h2');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const groupBtn = document.getElementById("groupBtn");
+  const groupModeBtn = document.getElementById('enableGroupModeBtn');
 
   window.onscroll = function () { scrollFunction() };
   const selectedImages = new Set();
   let profile = null;
   let banner = null;
+  let groupModeEnabled = false;
+
 
   async function scrollFunction() {
     if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
@@ -77,11 +114,61 @@
   }
 
   topBtn.addEventListener("click", topFunction);
-
   function topFunction() {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }
+
+
+  //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
+  async function updateUIForAuth(session) {
+    const photoContainers = document.querySelectorAll('.photo-container');
+    if (session) {  // User is logged in
+      loginBtn.style.display = 'none';
+      navbar.style.display = "flex";
+      loginModal.style.display = 'none';
+      photoContainers.forEach(container => {
+        container.classList.add('logged-in');
+      });
+    } else {  // User is logged out
+      loginBtn.style.display = 'block';
+      navbar.style.display = "none";
+      photoContainers.forEach(container => {
+        container.classList.remove('logged-in');
+      });
+      if (groupModeEnabled) {
+        groupModeEnabled = false;
+        groupModeBtn.classList.remove('active');
+        document.querySelectorAll('.group-checkbox').forEach(cb => {
+          cb.style.display = 'none';
+          cb.checked = false;
+        });
+        selectedImages.clear();
+        h1.innerHTML = "My Photo Gallery";
+        h2.innerHTML = "";
+        document.getElementById('id01').style.display = 'none';
+        toggleGroupButton();
+      }
+    }
+  }
+
+  async function initializeAuth() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error('Error getting session:', error);
+    }
+    updateUIForAuth(session);
+  }
+
+  initializeAuth();
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log('Auth state changed:', event, session);
+    updateUIForAuth(session);
+  });
+
+
+  //GALLERY STUFF------------------------------------------------------------------------------------------------------------------------------------------------
   async function loadPhotos() {
 
     const { data, error } = await supabase
@@ -130,6 +217,7 @@
 
       const button = document.createElement('button');
       button.textContent = "delete";
+      button.classList.add('delete-button');
       button.addEventListener("click", () => {
         deletePhoto(photo)
       })
@@ -154,12 +242,13 @@
       container.appendChild(checkbox);
       gallery.appendChild(container);
     });
+    const { data: { session } } = await supabase.auth.getSession();
+    updateUIForAuth(session);
   }
 
-  const groupBtn = document.getElementById("groupBtn");
 
   async function deletePhoto(photo) {
-    const filePath = photo.image_url.split('/storage/v1/object/public/images/')[1];
+    const filePath = photo.image_url.split('/storage/v1/object/public/images/uploads/')[1];
 
     const { error: storageError } = await supabase.storage
       .from('images')
@@ -174,17 +263,20 @@
     container.remove();
   }
 
-  const groupModeBtn = document.getElementById('enableGroupModeBtn');
-  let groupModeEnabled = false;
+  loadPhotos();
+
+
+  //GROUP STUFF------------------------------------------------------------------------------------------------------------------------------------------------
+
 
   groupModeBtn.onclick = function (e) {
     e.preventDefault();
     groupModeEnabled = !groupModeEnabled;
-
+    //if you click group mode button, it makes checkboxes on each image and changes the H1 and adds a text explanation. If clicked again, it reverts everything
     if (groupModeEnabled) {
       groupModeBtn.classList.add('active');
       document.querySelectorAll('.group-checkbox').forEach(cb => cb.style.display = 'block');
-      document.getElementById('groupBtn').style.display = 'block';
+
       h1.innerHTML = "Group Mode";
       h2.innerHTML = 'Select 2 Images to group together. The first selected image will be the profile picture, the second the banner picture';
     } else {
@@ -193,7 +285,7 @@
         cb.style.display = 'none';
         cb.checked = false;
       });
-      document.getElementById('groupBtn').style.display = 'none';
+
       selectedImages.clear();
       h1.innerHTML = "My Photo Gallery";
       h2.innerHTML = "";
@@ -202,9 +294,7 @@
     toggleGroupButton();
   };
 
-
-
-  async function toggleGroupButton() {
+  async function toggleGroupButton() { //displays the group button if 2 checkboxes are checked
     if (selectedImages.size === 2) {
       groupBtn.style.display = "block";
       UploadMessage.textContent = "";
@@ -229,7 +319,7 @@
     }
   }
 
-  async function confirmGroup() {
+  async function confirmGroup() {  //button that sends data to supabase
     loader.style.display = "block";
     const { data, error } = await supabase
       .from('groups')
@@ -246,7 +336,54 @@
     selectedImages.clear();
   }
 
-  loadPhotos();
+  //LOGIN STUFF------------------------------------------------------------------------------------------------------------------------------------------------
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      authStatus.textContent = `Error: ${error.message}`;
+      console.error('Login error:', error);
+      alert('Cant find user, please sign in');
+    } else {
+      console.log('Login successful:', data);
+      setTimeout(() => {
+        loginModal.style.display = 'none';
+      }, 3500);
+    }
+  });
+
+
+  logoutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    // Get the current session
+    const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
+    if (getSessionError) {
+      console.error('Error getting session before logout:', getSessionError.message);
+      alert('Could not check session status. Please try again.');
+      return;
+    } if (!session) {
+      console.warn('No active session found, cannot log out.');
+      alert('You are not logged in.');
+      updateUIForAuth(null);
+      return;
+    }
+    // If a session exists, proceed with sign out
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      console.error('Error logging out:', signOutError.message);
+      alert(`Error logging out: ${signOutError.message}`);
+    } else {
+      console.log('User logged out successfully.');
+    }
+  });
+
 </script>
 
 </html>

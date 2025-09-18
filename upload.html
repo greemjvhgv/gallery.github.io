@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -38,20 +38,55 @@
   const tagsInput = document.getElementById('tagsInput');
   const UploadMessage = document.getElementById('uploadmessage');
   let selectedFile = null;
+  let currentUser = null;
+
+
+  async function initializePageAuth() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error('Error getting session:', error);
+      return;
+    }
+
+    if (session) {
+      currentUser = session.user; // Store user data
+      console.log('User is logged in on upload page:', currentUser.email);
+    } else {
+      console.log('No active session found on upload page.');
+    }
+  }
+
+  initializePageAuth();
 
   fileInput.addEventListener('change', (event) => {
     UploadMessage.innerHTML = "";
     selectedFile = event.target.files[0];
     if (selectedFile) {
       preview.src = URL.createObjectURL(selectedFile);
+      preview.style.display = 'block';
+      preview.style.maxWidth = '300px';
+      preview.style.maxHeight = '400px';
+    } else {
+      preview.src = '';
+      preview.style.display = 'none';
     }
   });
 
   async function uploadImage() {
+
+    if (!currentUser) {
+      alert("You must be logged in to upload photos!");
+      UploadMessage.textContent = 'Login required to upload.';
+      return; // Stop the function if not logged in
+    }
+
     if (!selectedFile) {
       alert("Please select a file first!");
       return;
     }
+
+    const userId = currentUser.id;
     const filePath = `uploads/${Date.now()}_${selectedFile.name}`;
 
     loader.style.display = "block";
@@ -64,6 +99,7 @@
 
     if (uploadError) {
       console.error('Error uploading image:', uploadError);
+      UploadMessage.textContent = `Upload failed: ${uploadError.message}`;
       return;
     }
 
@@ -81,13 +117,13 @@
 
     const { error: insertError } = await supabase
       .from('photos')
-      .insert([{ image_url: publicUrl, tags: tags }]);
+      .insert([{ image_url: publicUrl, tags: tags, user_id: userId }]);
 
     if (insertError) {
       console.error('Error inserting URL into database:', insertError);
+      UploadMessage.textContent = `Database error: ${insertError.message}`;
       return;
     }
-
 
     loader.style.display = "none";
     UploadMessage.innerHTML = "- - - - Uploaded! - - - -";
