@@ -305,6 +305,8 @@ h3 {
   height: auto;
 }
 
+
+
 .photo-container:hover .tags-overlay {
   opacity: 1;
 }
