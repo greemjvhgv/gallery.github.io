@@ -201,13 +201,19 @@
       img.style.margin = '5px';
 
       img.onclick = function () {
-        imageModal.style.display = "flex";
-        imageModal.style.margin = "auto";
-        modalImg.src = this.src;
-        modalImg.style.maxWidth = "100%";
-        modalImg.style.maxHeight = "90%";
-        modalImg.alt = this.alt || "";
+        if (groupModeEnabled) {
+          const checkbox = this.parentElement.querySelector('.group-checkbox');
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event('change')); 
+        } else {
+          imageModal.style.display = "flex";
+          modalImg.src = this.src;
+          modalImg.style.maxWidth = "100%";
+          modalImg.style.maxHeight = "90%";
+          modalImg.alt = this.alt || "";
+        }
       };
+
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
