@@ -497,6 +497,7 @@ button {
   top: 0;
   width: 100vw;
   height: 100vh;
+  background-color: #000000;
   display: flex;
   justify-content: center;
   align-items: center;
