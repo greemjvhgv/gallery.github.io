@@ -199,11 +199,13 @@
       img.src = photo.image_url;
       img.style.width = '240px';
       img.style.margin = '5px';
-      img.style.marginBottom = '2px';
 
       img.onclick = function () {
         imageModal.style.display = "block";
+        imageModal.style.left = "10px";
+        imageModal.style.top = "50px";
         modalImg.src = this.src;
+        modalImg.style.maxWidth = "800px";
         modalImg.alt = this.alt || "";
       };
 
@@ -288,7 +290,6 @@
 
 
   //GROUP STUFF------------------------------------------------------------------------------------------------------------------------------------------------
-
 
   groupModeBtn.onclick = function (e) {
     e.preventDefault();

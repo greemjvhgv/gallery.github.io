@@ -138,7 +138,7 @@ h3 {
   top: 0;
   display: flex;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: rgba(166, 43, 43, 0.9);
   align-items: center;
 }
 
@@ -294,6 +294,13 @@ h3 {
   font-weight: 750;
   opacity: 0;
   pointer-events: none;
+}
+
+#img01 {
+  display: block;
+  margin: auto;
+  position: sticky;
+  width: auto;
 }
 
 .photo-container:hover .tags-overlay {
