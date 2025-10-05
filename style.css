@@ -242,8 +242,8 @@ h3 {
 }
 
 #groupBtn {
-  padding: 1px;
-  border: -.2px solid;
+  padding: 4px;
+  border: 2px solid;
   position: fixed;
   bottom: 20px;
   left: 20px;
@@ -251,14 +251,16 @@ h3 {
   background-color: rgb(0, 0, 0);
   color: rgb(255, 255, 255);
   border: block;
-  font-size: 20px;
+  font-size: 50px;
   cursor: pointer;
   z-index: 1000;
 }
 
-#groupBtn:active {
-  box-shadow: 0 5px #ffffff;
+#groupBtn:focus {
+  color: #000;
+  background-color: #dedede;
   transform: translateY(4px);
+  font-size: 20px;
 }
 
 .loader {
