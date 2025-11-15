@@ -9,18 +9,29 @@
 <body class="mainbody">
 
   <h1 id="h1">My Photo Gallery</h1>
+
   <div id="navbar" class="navbar">
-    <a href="index.html" class="active">Gallery</a>
     <a href="upload.html">Upload Image</a>
+
+    <div class="search-container">
+      <form>
+        <input type="text" id="searchInput" placeholder="Search by tags">
+        <button type="submit" class="searchBtn" id="searchButton">Go</button>
+      </form>
+    </div>
+
     <a href="#" id="enableGroupModeBtn">Group Mode</a>
     <a href="groups.html">Group Gallery</a>
-    <button id="logoutBtn">Logout</button>
+    <button id="logoutBtn" class="logoutBtn">Logout</button>
   </div>
+
   <button onclick="document.getElementById('loginModal').style.display='flex'" id="loginBtn">Login</button>
 
   <h2 id="h2"></h2>
 
-  <div id="gallery"></div>
+  <div id="gallery" class="gallery-grid"></div>
+<div id="searchGallery" class="gallery-grid"></div>
+
 
   <!--GROUP STUFF-->
   <button id="groupBtn" style="display: none;">Group</button>
@@ -103,6 +114,9 @@
   const groupModeBtn = document.getElementById('enableGroupModeBtn');
   const imageModal = document.getElementById('myModal');
   const modalImg = document.getElementById("img01");
+  const searchInput = document.getElementById('searchInput');
+  const searchButton = document.getElementById('searchButton');
+  const searchResultsGal = document.getElementById('searchGallery');
 
 
   window.onscroll = function () { scrollFunction() };
@@ -110,7 +124,6 @@
   let profile = null;
   let banner = null;
   let groupModeEnabled = false;
-
 
   async function scrollFunction() {
     if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
@@ -204,7 +217,7 @@
         if (groupModeEnabled) {
           const checkbox = this.parentElement.querySelector('.group-checkbox');
           checkbox.checked = !checkbox.checked;
-          checkbox.dispatchEvent(new Event('change')); 
+          checkbox.dispatchEvent(new Event('change'));
         } else {
           imageModal.style.display = "flex";
           modalImg.src = this.src;
@@ -411,6 +424,94 @@
       console.log('User logged out successfully.');
     }
   });
+
+  //SEARCH STUFF------------------------------------------------------------------------------------------------------------------------------------------------
+
+async function performSearch() {
+  const searchTerm = searchInput.value.toLowerCase().trim();
+
+  if (!searchTerm) {
+    searchResultsGal.innerHTML = "";
+    searchResultsGal.style.display = "none";
+    gallery.style.display = "inline-block";
+    return;
+  }
+
+  console.log("Searching for:", searchTerm);
+
+  gallery.style.display = "none";
+  searchResultsGal.style.display = "inline-block";
+
+  const { data, error } = await supabase
+    .from('photos')
+    .select('*')
+    .contains('tags', [searchTerm]);
+
+  if (error) {
+    console.error("Search error:", error);
+    searchResultsGal.innerHTML = "<p>Error searching</p>";
+    return;
+  }
+
+  displayResults(data);
+}
+
+
+searchButton.addEventListener("click", async (e) => {
+  e.preventDefault();
+  await performSearch();
+});
+
+
+async function displayResults(results) {
+  searchResultsGal.innerHTML = ""; 
+
+  results.forEach(photo => {
+    const container = document.createElement('div');
+    container.classList.add('photo-container');
+
+    const img = document.createElement('img');
+    img.src = photo.image_url;
+    img.style.width = '240px';
+    img.style.margin = '5px';
+
+    img.onclick = function () {
+      if (groupModeEnabled) {
+        const checkbox = container.querySelector('.group-checkbox');
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      } else {
+        imageModal.style.display = "flex";
+        modalImg.src = this.src;
+      }
+    };
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.classList.add("group-checkbox");
+    checkbox.style.display = groupModeEnabled ? 'block' : 'none';
+
+    const button = document.createElement('button');
+    button.textContent = "delete";
+    button.classList.add('delete-button');
+    button.addEventListener("click", () => deletePhoto(photo));
+
+    const tooltip = document.createElement('div');
+    tooltip.classList.add('tags-tooltip', 'tags-overlay');
+    tooltip.textContent = Array.isArray(photo.tags)
+      ? photo.tags.join(', ')
+      : "No tags";
+
+    container.appendChild(img);
+    container.appendChild(tooltip);
+    container.appendChild(button);
+    container.appendChild(checkbox);
+    searchResultsGal.appendChild(container);
+  });
+   const { data: { session } } = await supabase.auth.getSession();
+    updateUIForAuth(session);
+}
+
 
 </script>
 
