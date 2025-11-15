@@ -465,6 +465,8 @@ searchButton.addEventListener("click", async (e) => {
 
 async function displayResults(results) {
   searchResultsGal.innerHTML = ""; 
+  const maxSelections = 2;
+    const checkboxes = [];
 
   results.forEach(photo => {
     const container = document.createElement('div');
@@ -487,10 +489,26 @@ async function displayResults(results) {
     };
 
     const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.classList.add("group-checkbox");
-    checkbox.style.display = groupModeEnabled ? 'block' : 'none';
+      checkbox.type = 'checkbox';
+      checkbox.style.display = 'none';
+      checkbox.classList.add("group-checkbox");
+      checkboxes.push(checkbox);
 
+      checkbox.addEventListener('change', function () {
+        const checkedCount = checkboxes.filter(cb => cb.checked).length;
+        if (checkedCount > maxSelections) {
+          this.checked = false;
+          return;
+        }
+        if (checkbox.checked) {
+          selectedImages.add(photo.image_url);
+          console.log(photo.id, photo.image_url)
+          console.log(Array.from(selectedImages))
+        } else {
+          selectedImages.delete(photo.image_url);
+        }
+        toggleGroupButton();
+      });
     const button = document.createElement('button');
     button.textContent = "delete";
     button.classList.add('delete-button');
