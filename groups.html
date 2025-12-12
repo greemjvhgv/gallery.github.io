@@ -9,14 +9,15 @@
 
 <body class="mainbody">
 
-    <h1 id="h1">Groups Gallery</h1>
     <div class="navbar">
         <a href="index.html">Gallery</a>
-        <a href="group.html" class="active">Group Gallery</a>
     </div>
-    <div id="groupgallery"></div>
-    <p id="message"></p>
-    <button onclick="topFunction()" id="topBtn">Top</button>
+
+    <div class="main">
+        <div id="groupgallery"></div>
+    </div>
+
+     <button onclick="topFunction()" id="topBtn">Top</button>
 
 </body>
 
@@ -27,24 +28,23 @@
 
     const topBtn = document.getElementById("topBtn");
     const groupgallery = document.getElementById('groupgallery');
-     const message = document.getElementById('message');
+    const message = document.getElementById('message');
 
     window.onscroll = function () { scrollFunction() };
 
     async function scrollFunction() {
-        if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
-            topBtn.style.display = "block";
-        } else {
-            topBtn.style.display = "none";
-        }
+    if (document.body.scrollTop > 80 || document.documentElement.scrollTop > 50) {
+      topBtn.style.display = "block";
+    } else {
+      topBtn.style.display = "none";
     }
+  }
 
-    topBtn.addEventListener("click", topFunction);
-
-    function topFunction() {
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-    }
+  topBtn.addEventListener("click", topFunction);
+  function topFunction() {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
 
     //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
     async function updateUIForAuth(session) {
@@ -54,7 +54,7 @@
                 container.classList.add('logged-in');
             });
         } else {  // User is logged out
-            groupgallery.style.display='none';
+            groupgallery.style.display = 'none';
             message.innerHTML = "Please Log In to see Groups!"
             photoContainers.forEach(container => {
                 container.classList.remove('logged-in');
@@ -72,7 +72,7 @@
 
     initializeAuth();
 
-
+    //GALLERY STUFF------------------------------------------------------------------------------------------------------------------------------------------------
     async function loadGroups() {
 
         const { data, error } = await supabase
@@ -83,7 +83,6 @@
             console.error('Error loading photos:', error);
             return;
         }
-
 
         data.forEach(group => {
             const container = document.createElement("div");
@@ -101,14 +100,13 @@
             bannerImg.className = 'bannerImg';
             bannerImg.src = group.banner_url;
 
-              const button = document.createElement('button');
+            const button = document.createElement('button');
             button.className = "del";
             button.textContent = "delete";
             button.classList.add('delete-button');
             button.addEventListener("click", () => {
                 deleteGroup(group)
             });
-
 
             bannerDiv.appendChild(bannerImg);
             profileDiv.appendChild(profileImg);
@@ -117,7 +115,7 @@
             container.appendChild(profileDiv);
             groupgallery.appendChild(container);
         });
-         const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         updateUIForAuth(session);
     }
 

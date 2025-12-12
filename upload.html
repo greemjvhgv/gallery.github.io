@@ -7,21 +7,49 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="bg">
+<body class="mainbody">
 
-  <form class="form">
-    <a href="index.html" class="back-link">Back to Gallery</a>
-    <h1>Upload a Photo</h1>
+  <div class="center-wrapper">
+    <form class="form">
+      <a href="main.html" class="back-link">Back to Gallery</a>
+      <h1>Upload a Photo</h1>
+      <hr style="width: 97%; margin-top: -20px; height: 2px; background-color: rgb(255, 255, 255);">
 
-    <input type="file" id="fileInput" />
-    <img id="preview" src="" alt="Preview will appear here" />
+      <div id="mainRow">
 
-    <input type="text" id="tagsInput" class="tagsinput" placeholder="Enter Tag Here" />
+        <div id="imgContainer">
+          <input type="file" id="fileInput"/>
+          <label for="fileInput" class="file-upload">File Upload</label>
+          <br />
+          <img id="preview" src="" alt="Preview will appear here" />
+        </div>
 
-    <button id="uploadBtn" type="button" onclick="uploadImage()" class="button">Upload</button>
-    <div id="loader" class="loader" style="display: none;"></div>
-    <p id="uploadmessage"></p>
-  </form>
+        <div id="rightContainer">
+          <div id="tagsContainer">
+            <input type="text" id="tagsInput" class="tagsinput" placeholder="Enter Tags Here" />
+          </div>
+
+          <div id="selectContainer">
+            <label>What does this fall under?</label>
+            <select name="aorb" id="aorb" style="float: right;">
+              <option value="avatar">Avatar</option>
+              <option value="banner">Banner</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div id="uploadContainer">
+        <button id="uploadBtn" type="button" onclick="uploadImage()" class="button">Upload</button>
+      </div>
+      <div id="loader" class="loader" style="display: none;"></div>
+      <p id="uploadmessage"></p>
+
+    </form>
+  </div>
 
 </body>
 
@@ -37,9 +65,18 @@
   const uploadBtn = document.getElementById('uploadBtn')
   const tagsInput = document.getElementById('tagsInput');
   const UploadMessage = document.getElementById('uploadmessage');
+  const selectInput = document.getElementById('aorb');
   let selectedFile = null;
   let currentUser = null;
 
+  function getCategories() {
+    const value = document.getElementById("aorb").value;
+
+    if (value === "avatar") return ["avatar"];
+    if (value === "banner") return ["banner"];
+    if (value === "both") return ["avatar", "banner"];
+    return ["none"];
+  }
 
   async function initializePageAuth() {
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -115,9 +152,16 @@
       .map(tag => tag.trim())
       .filter(Boolean);
 
+    const categories = getCategories();
+
     const { error: insertError } = await supabase
       .from('photos')
-      .insert([{ image_url: publicUrl, tags: tags, user_id: userId }]);
+      .insert([{
+        image_url: publicUrl,
+        tags: tags,
+        categories: categories,
+        user_id: userId
+      }]);
 
     if (insertError) {
       console.error('Error inserting URL into database:', insertError);
@@ -126,7 +170,7 @@
     }
 
     loader.style.display = "none";
-    UploadMessage.innerHTML = "- - - - Uploaded! - - - -";
+    UploadMessage.innerHTML = "- - - - Uploaded - - - -";
     document.getElementById('tagsInput').value = "";
     selectedFile = null
   }
