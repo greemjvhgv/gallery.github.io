@@ -251,6 +251,8 @@
         } else {
           imageModal.style.display = "flex";
           modalImg.src = photo.image_url;
+          modalTags.innerHTML = "";
+          modalCategories.innerHTML = "";
 
           if (Array.isArray(photo.tags)) {
             photo.tags.forEach(tag => {
@@ -259,6 +261,7 @@
               modalTags.appendChild(span);
             });
           }
+
           if (Array.isArray(photo.categories)) {
             photo.categories.forEach(cat => {
               const span = document.createElement("span");
