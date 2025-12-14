@@ -83,7 +83,25 @@
   </div>
 
   <div id="myModal" class="modal" style="display: none;">
-    <img class="modal-content" id="img01">
+    <div class="modal-content-img">
+    <button onclick="document.getElementById('myModal').style.display='none'" class="imgCnl">&times;</button>
+    <div class="modal-inner">
+      <img class="modal-content" id="img01">
+      <div class="modal-info">
+        <h1>Image info</h1>
+        <hr class="new5">
+        <div>
+          <strong>Tags:</strong>
+          <div id="modalTags" class="meta-list"></div>
+        </div>
+        <br />
+        <div>
+          <strong>Categories:</strong>
+          <div id="modalCategories" class="meta-list"></div>
+        </div>
+      </div>
+    </div>
+    </div>
   </div>
 
   <button onclick="topFunction()" id="topBtn">Top</button>
@@ -117,7 +135,12 @@
   const searchInput = document.getElementById('searchInput');
   const searchButton = document.getElementById('searchButton');
   const searchResultsGal = document.getElementById('searchGallery');
-const dropdown = document.getElementById("aorb")
+  const dropdown = document.getElementById("aorb");
+  const modalTags = document.getElementById("modalTags");
+  const modalCategories = document.getElementById("modalCategories");
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
 
 
   window.onscroll = function () { scrollFunction() };
@@ -173,7 +196,6 @@ const dropdown = document.getElementById("aorb")
           cb.checked = false;
         });
         selectedImages.clear();
-        h1.innerHTML = "My Photo Gallery";
         h2.innerHTML = "";
         document.getElementById('id01').style.display = 'none';
         toggleGroupButton();
@@ -227,12 +249,25 @@ const dropdown = document.getElementById("aorb")
           checkbox.checked = !checkbox.checked;
           checkbox.dispatchEvent(new Event('change'));
         } else {
-          imageModal.style.display = "grid";
-          modalImg.src = this.src;
-          modalImg.style.maxWidth = "100%";
-          modalImg.style.maxHeight = "90%";
-          modalImg.alt = this.alt || "";
+          imageModal.style.display = "flex";
+          modalImg.src = photo.image_url;
+
+          if (Array.isArray(photo.tags)) {
+            photo.tags.forEach(tag => {
+              const span = document.createElement("span");
+              span.textContent = tag;
+              modalTags.appendChild(span);
+            });
+          }
+          if (Array.isArray(photo.categories)) {
+            photo.categories.forEach(cat => {
+              const span = document.createElement("span");
+              span.textContent = cat;
+              modalCategories.appendChild(span);
+            });
+          }
         }
+
       };
 
 
@@ -431,47 +466,50 @@ const dropdown = document.getElementById("aorb")
 
   //SEARCH STUFF------------------------------------------------------------------------------------------------------------------------------------------------
 
- async function performSearch() {
-  const searchTerm = searchInput.value.toLowerCase().trim();
-  const selectedType = document.getElementById("aorb").value;
+  async function performSearch() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const selectedType = document.getElementById("aorb").value;
 
-  const { data, error } = await supabase
-  .from('photos')
-  .select('*');
+    const { data, error } = await supabase
+      .from('photos')
+      .select('*');
 
-  if (error) {
-    console.error("Search error:", error);
-    searchResultsGal.innerHTML = "<p>Error searching</p>";
-    return;
+    if (error) {
+      console.error("Search error:", error);
+      searchResultsGal.innerHTML = "<p>Error searching</p>";
+      return;
+    }
+
+    gallery.style.display = "none";
+    searchResultsGal.style.display = "inline-block";
+
+    let filtered = data;
+    if (searchTerm) {
+      filtered = filtered.filter(photo =>
+        Array.isArray(photo.tags) &&
+        photo.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+      );
+    } else if (selectedType !== "both") {
+      filtered = filtered.filter(photo =>
+        Array.isArray(photo.categories) &&
+        photo.categories.map(c => c.toLowerCase()).includes(selectedType)
+      );
+    }
+    displayResults(filtered);
+
+    // Reapply group mode logic after filtering
+    if (groupModeEnabled) {
+      document.querySelectorAll('.group-checkbox').forEach(cb => cb.style.display = 'block');
+    }
   }
 
-  gallery.style.display = "none";
-  searchResultsGal.style.display = "inline-block";
-
-  let filtered = data;
-  if (searchTerm) {
-    filtered = filtered.filter(photo =>
-      Array.isArray(photo.tags) &&
-      photo.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-    );
-  } else if (selectedType !== "both") {
-    filtered = filtered.filter(photo =>
-      Array.isArray(photo.categories) &&
-      photo.categories.map(c => c.toLowerCase()).includes(selectedType)
-    );
-  }
-  displayResults(filtered);
-}
-
-searchButton.addEventListener("click", async (e) => {
-  e.preventDefault();
-  await performSearch();
-});
+  searchButton.addEventListener("click", async (e) => {
+    e.preventDefault();
+    await performSearch();
+  });
 
 
-document.getElementById("aorb").addEventListener("change", performSearch);
-
-
+  document.getElementById("aorb").addEventListener("change", performSearch);
 
 
   async function displayResults(results) {
@@ -495,7 +533,25 @@ document.getElementById("aorb").addEventListener("change", performSearch);
           checkbox.dispatchEvent(new Event('change'));
         } else {
           imageModal.style.display = "flex";
-          modalImg.src = this.src;
+          modalImg.src = photo.image_url;
+          modalTags.innerHTML = "";
+          modalCategories.innerHTML = "";
+
+          if (Array.isArray(photo.tags)) {
+            photo.tags.forEach(tag => {
+              const span = document.createElement("span");
+              span.textContent = tag;
+              modalTags.appendChild(span);
+            });
+          }
+
+          if (Array.isArray(photo.categories)) {
+            photo.categories.forEach(cat => {
+              const span = document.createElement("span");
+              span.textContent = cat;
+              modalCategories.appendChild(span);
+            });
+          }
         }
       };
 
@@ -520,6 +576,7 @@ document.getElementById("aorb").addEventListener("change", performSearch);
         }
         toggleGroupButton();
       });
+
       const button = document.createElement('button');
       button.textContent = "delete";
       button.classList.add('delete-button');
@@ -541,7 +598,35 @@ document.getElementById("aorb").addEventListener("change", performSearch);
     updateUIForAuth(session);
   }
 
+  // Drag and drop file upload
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
 
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+
+    const files = e.dataTransfer.files;
+    handleFiles(files);
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const files = e.target.files;
+    handleFiles(files);
+  });
+
+  function handleFiles(files) {
+    for (const file of files) {
+      console.log('File uploaded:', file.name);
+      // Add your file upload logic here
+    }
+  }
 </script>
 
 </html>
