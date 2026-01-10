@@ -17,14 +17,14 @@
         <div id="groupgallery"></div>
     </div>
 
-     <button onclick="topFunction()" id="topBtn">Top</button>
+    <button onclick="topFunction()" id="topBtn">Top</button>
 
 </body>
 
 <script>
     const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const topBtn = document.getElementById("topBtn");
     const groupgallery = document.getElementById('groupgallery');
@@ -33,18 +33,18 @@
     window.onscroll = function () { scrollFunction() };
 
     async function scrollFunction() {
-    if (document.body.scrollTop > 80 || document.documentElement.scrollTop > 50) {
-      topBtn.style.display = "block";
-    } else {
-      topBtn.style.display = "none";
+        if (document.body.scrollTop > 80 || document.documentElement.scrollTop > 50) {
+            topBtn.style.display = "block";
+        } else {
+            topBtn.style.display = "none";
+        }
     }
-  }
 
-  topBtn.addEventListener("click", topFunction);
-  function topFunction() {
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-  }
+    topBtn.addEventListener("click", topFunction);
+    function topFunction() {
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    }
 
     //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
     async function updateUIForAuth(session) {
@@ -63,7 +63,7 @@
     }
 
     async function initializeAuth() {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
         if (error) {
             console.error('Error getting session:', error);
         }
@@ -75,7 +75,7 @@
     //GALLERY STUFF------------------------------------------------------------------------------------------------------------------------------------------------
     async function loadGroups() {
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('groups')
             .select();
 
@@ -115,12 +115,12 @@
             container.appendChild(profileDiv);
             groupgallery.appendChild(container);
         });
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         updateUIForAuth(session);
     }
 
     async function deleteGroup(group) {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('groups')
             .delete()
             .eq('id', group.id);

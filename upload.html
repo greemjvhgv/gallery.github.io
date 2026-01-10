@@ -18,7 +18,7 @@
       <div id="mainRow">
 
         <div id="imgContainer">
-          <input type="file" id="fileInput"/>
+          <input type="file" id="fileInput" />
           <label for="fileInput" class="file-upload">File Upload</label>
           <br />
           <img id="preview" src="" alt="Preview will appear here" />
@@ -56,8 +56,7 @@
 <script>
   const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
-  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
+  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
   const fileInput = document.getElementById('fileInput');
   const preview = document.getElementById('preview');
@@ -79,7 +78,7 @@
   }
 
   async function initializePageAuth() {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
 
     if (error) {
       console.error('Error getting session:', error);
@@ -110,8 +109,8 @@
     }
   });
 
-  async function uploadImage() {
 
+  async function uploadImage() {
     if (!currentUser) {
       alert("You must be logged in to upload photos!");
       UploadMessage.textContent = 'Login required to upload.';
@@ -129,7 +128,7 @@
     loader.style.display = "block";
     UploadMessage.textContent = "";
 
-    const { data, error: uploadError } = await supabase
+    const { data, error: uploadError } = await supabaseClient
       .storage
       .from('images')
       .upload(filePath, selectedFile);
@@ -140,7 +139,7 @@
       return;
     }
 
-    const { data: publicUrlData } = supabase
+    const { data: publicUrlData } = supabaseClient
       .storage
       .from("images")
       .getPublicUrl(filePath);
@@ -154,7 +153,7 @@
 
     const categories = getCategories();
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseClient
       .from('photos')
       .insert([{
         image_url: publicUrl,
