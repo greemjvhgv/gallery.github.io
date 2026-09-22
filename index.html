@@ -1,595 +1,66 @@
 <html>
-
 <head>
-  <title>Main Page</title>
+  <title>Landing Page</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="main.css">
 </head>
 
 <body class="mainbody">
-
-  <div id="navbar" class="navbar">
-    <a href="upload.html">Upload Image</a>
-    <a href="#" id="enableGroupModeBtn">Group Mode</a>
-    <a href="groups.html">Group Gallery</a>
-    <a href="#" id="logoutBtn">Logout</a>
-    <button id="groupBtn" style="display: none;">Group</button>
-  </div>
-
-  <button onclick="document.getElementById('loginModal').style.display='flex'" id="loginBtn"
-    class="loginBtn">Login</button>
-  <div class="main">
-    <div class="top-search">
-      <input type="text" id="searchInput" placeholder="Search tags...">
-      <select name="aorb" id="aorb" style="float: right;">
-        <option value="avatar">Avatars</option>
-        <option value="banner">Banners</option>
-        <option value="both">All</option>
-      </select>
-      <button id="searchButton">Search</button>
-      <h2 id="h2" class="h2"></h2>
-    </div>
-
-    <div id="gallery" class="gallery-grid"></div>
-    <div id="searchGallery" class="gallery-grid"></div>
-  </div>
-
-  <!--GROUP STUFF-->
-  <form>
-    <div id="id01" class="modal" style="display: none;">
-      <div class="modal-content animate">
-        <button type="button" onclick="document.getElementById('id01').style.display='none'"
-          class="cancelbtn">&times;</button>
-        <div id="formHeader">
-          <div id="loader" class="loader" style="display: none;"></div>
-          <p id="uploadmessage" style="font-size: 25px;"></p>
-          <h2>Are you happy with this group?</h2>
-        </div>
-        <button id="confirmBtn" onclick="confirmGroup()" type="button">Confirm</button>
-        <div class="row">
-          <div class=" column">
-            <div class="container" id="profileContainer"
-              style="display: flex; flex-direction: column; align-items: center;">
-            </div>
-          </div>
-          <div class=" column">
-            <div class="container" id="bannerContainer"
-              style="display: flex; flex-direction: column; align-items: center;">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </form>
-
-  <!--LOGIN STUFF-->
-  <div id="loginModal" class="modal" style="display: none;">
-    <div class="modal-content animate">
-      <span onclick="document.getElementById('loginModal').style.display='none'" class="cancelbtn"
-        style="cursor: pointer;">&times;</span>
-      <form id="loginForm">
-        <div class="container">
-          <label for="email"><b>Email</b></label>
-          <input type="text" placeholder="Enter Email" id="email" required>
-          <br />
-          <label for="password"><b>Password</b></label>
-          <input type="password" placeholder="Enter Password" id="password" required>
-        </div>
-        <br />
-        <button type="submit">Login</button>
-      </form>
-      <p id="auth-status" style="text-align: center; margin-top: 10px;"></p>
+  <div class="top-fade" aria-hidden="true"></div>
+  <a href="login.html"><button  id="loginBtn" class="loginBtn">Login</button></a>
+  <div class="main full-width">
+    <div class="preview">
+      <div id="gallery" class="gallery-grid"></div>
+      <div class="preview-fade" aria-hidden="true"></div>
     </div>
   </div>
-
-  <div id="myModal" class="modal" style="display: none;">
-    <div class="modal-content-img">
-      <button onclick="document.getElementById('myModal').style.display='none'" class="imgCnl">&times;</button>
-      <div class="modal-inner">
-        <img class="modal-content" id="img01">
-        <div class="modal-info">
-          <h1>Image info</h1>
-          <hr class="new5">
-          <div>
-            <strong>Tags:</strong>
-            <div id="modalTags" class="meta-list"></div>
-          </div>
-          <br />
-          <div>
-            <strong>Categories:</strong>
-            <div id="modalCategories" class="meta-list"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <button onclick="topFunction()" id="topBtn">Top</button>
-
+  <br>
+  <h1>Login to see more</h1>
+  <br>
 </body>
 
 <script>
-  console.log("UPLOAD PAGE JS LOADED");
   const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
   const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-  const topBtn = document.getElementById("topBtn");
-  const modal = document.getElementById('loginModal');
   const gallery = document.getElementById('gallery');
-  const loader = document.getElementById('loader');
-  const UploadMessage = document.getElementById('uploadmessage');
-  const loginForm = document.getElementById('loginForm');
-  const loginBtn = document.getElementById('loginBtn');
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
-  const loginModal = document.getElementById('loginModal');
-  const authStatus = document.getElementById('auth-status');
-  const navbar = document.querySelector('.navbar');
-  const h1 = document.getElementById('h1');
-  const h2 = document.getElementById('h2');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const groupBtn = document.getElementById("groupBtn");
-  const groupModeBtn = document.getElementById('enableGroupModeBtn');
-  const imageModal = document.getElementById('myModal');
-  const modalImg = document.getElementById("img01");
-  const searchInput = document.getElementById('searchInput');
-  const searchButton = document.getElementById('searchButton');
-  const searchResultsGal = document.getElementById('searchGallery');
-  const dropdown = document.getElementById("aorb");
-  const modalTags = document.getElementById("modalTags");
-  const modalCategories = document.getElementById("modalCategories");
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
+  const PREVIEW_COUNT = 28;
 
-  window.onscroll = function () { scrollFunction() };
-  const selectedImages = new Set();
-  let profile = null;
-  let banner = null;
-  let groupModeEnabled = false;
-
-  async function scrollFunction() {
-    if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
-      topBtn.style.display = "block";
-    } else {
-      topBtn.style.display = "none";
+  function pickRandom(items, n) {
+    const copy = items.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
     }
+    return copy.slice(0, n);
   }
 
-  topBtn.addEventListener("click", topFunction);
-  function topFunction() {
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-  }
-
-  //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
-  async function updateUIForAuth(session) {
-    const photoContainers = document.querySelectorAll('.photo-container');
-    const mainDiv = document.querySelector('.main');
-    if (session) {  // User is logged in
-      loginBtn.style.display = 'none';
-      navbar.style.display = "flex";
-      dropdown.style.display = "block";
-      searchInput.style.display = "block";
-      searchButton.style.display = "block";
-      loginModal.style.display = 'none';
-      mainDiv.classList.remove('full-width');
-      photoContainers.forEach(container => {
-        container.classList.add('logged-in');
-      });
-    } else {  // User is logged out
-      loginBtn.style.display = 'block';
-      dropdown.style.display = "none";
-      navbar.style.display = "none";
-      searchInput.style.display = "none";
-      searchButton.style.display = "none";
-      mainDiv.classList.add('full-width');
-      photoContainers.forEach(container => {
-        container.classList.remove('logged-in');
-      });
-      if (groupModeEnabled) {
-        groupModeEnabled = false;
-        groupModeBtn.classList.remove('active');
-        document.querySelectorAll('.group-checkbox').forEach(cb => {
-          cb.style.display = 'none';
-          cb.checked = false;
-        });
-        selectedImages.clear();
-        h2.innerHTML = "";
-        document.getElementById('id01').style.display = 'none';
-        toggleGroupButton();
-      }
-    }
-  }
-
-  async function initializeAuth() {
-    const { data: { session }, error } = await supabaseClient.auth.getSession();
-    if (error) {
-      console.error('Error getting session:', error);
-    }
-    updateUIForAuth(session);
-  }
-
-  initializeAuth();
-
-  supabaseClient.auth.onAuthStateChange((event, session) => {
-    console.log('Auth state changed:', event, session);
-    updateUIForAuth(session);
-  });
-
-  //GALLERY STUFF------------------------------------------------------------------------------------------------------------------------------------------------
-  async function loadPhotos() {
-
+  async function loadPreview() {
     const { data, error } = await supabaseClient
       .from('photos')
-      .select();
+      .select('id, image_url');
 
     if (error) {
       console.error('Error loading photos:', error);
       return;
     }
 
-    const maxSelections = 2;
-    const checkboxes = [];
-
-    data.forEach(photo => {
+    pickRandom(data, PREVIEW_COUNT).forEach(photo => {
       const container = document.createElement('div');
       container.classList.add('photo-container');
 
       const img = document.createElement('img');
       img.src = photo.image_url;
-      img.style.width = '240px';
-      img.style.margin = '5px';
-
-      img.onclick = function () {
-        if (groupModeEnabled) {
-          const checkbox = this.parentElement.querySelector('.group-checkbox');
-          checkbox.checked = !checkbox.checked;
-          checkbox.dispatchEvent(new Event('change'));
-        } else {
-          imageModal.style.display = "flex";
-          modalImg.src = photo.image_url;
-          modalTags.innerHTML = "";
-          modalCategories.innerHTML = "";
-
-          if (Array.isArray(photo.tags)) {
-            photo.tags.forEach(tag => {
-              const span = document.createElement("span");
-              span.textContent = tag;
-              modalTags.appendChild(span);
-            });
-          }
-
-          if (Array.isArray(photo.categories)) {
-            photo.categories.forEach(cat => {
-              const span = document.createElement("span");
-              span.textContent = cat;
-              modalCategories.appendChild(span);
-            });
-          }
-        }
-
-      };
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.style.display = 'none';
-      checkbox.classList.add("group-checkbox");
-      checkboxes.push(checkbox);
-
-      checkbox.addEventListener('change', function () {
-        const checkedCount = checkboxes.filter(cb => cb.checked).length;
-        if (checkedCount > maxSelections) {
-          this.checked = false;
-          return;
-        }
-        if (checkbox.checked) {
-          selectedImages.add(photo.image_url);
-          console.log(photo.id, photo.image_url)
-          console.log(Array.from(selectedImages))
-        } else {
-          selectedImages.delete(photo.image_url);
-        }
-        toggleGroupButton();
-      });
-
-      const button = document.createElement('button');
-      button.textContent = "delete";
-      button.classList.add('delete-button');
-      button.addEventListener("click", () => {
-        deletePhoto(photo)
-      })
-
-      const tooltip = document.createElement('div');
-      tooltip.classList.add('tags-tooltip');
-      tooltip.classList.add('tags-overlay');
-      let tagsArray = [];
-      if (Array.isArray(photo.tags)) {
-        tagsArray = photo.tags.map(t => t.toLowerCase());
-      } else if (typeof photo.tags === 'string' && photo.tags.trim() !== '') {
-        tagsArray = photo.tags
-          .split(',')
-          .map(t => t.trim().toLowerCase())
-          .filter(Boolean);
-      }
-      tooltip.textContent = tagsArray.length ? tagsArray.join(', ') : 'No tags';
+      img.alt = '';
 
       container.appendChild(img);
-      container.appendChild(tooltip);
-      container.appendChild(button);
-      container.appendChild(checkbox);
       gallery.appendChild(container);
     });
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    updateUIForAuth(session);
   }
 
-  imageModal.onclick = function (e) {
-    if (e.target === imageModal) {
-      imageModal.style.display = "none";
-    }
-  };
-
-  async function deletePhoto(photo) {
-    const filePath = photo.image_url.split('/storage/v1/object/public/images/uploads/')[1];
-
-    const { error: storageError } = await supabaseClient.storage
-      .from('images')
-      .remove([filePath]);
-
-    const { error: dbError } = await supabaseClient
-      .from('photos')
-      .delete()
-      .eq('id', photo.id);
-
-    const container = document.querySelector(`img[src="${photo.image_url}"]`).parentElement;
-    container.remove();
-  }
-
-  loadPhotos();
-
-  //GROUP STUFF------------------------------------------------------------------------------------------------------------------------------------------------
-  groupModeBtn.onclick = function (e) {
-    e.preventDefault();
-    groupModeEnabled = !groupModeEnabled;
-    //if you click group mode button, it makes checkboxes on each image and changes the H1 and adds a text explanation. If clicked again, it reverts everything
-    if (groupModeEnabled) {
-      groupModeBtn.classList.add('active');
-      document.querySelectorAll('.group-checkbox').forEach(cb => cb.style.display = 'block');
-      h2.innerHTML = 'Select 2 Images to group together. The first selected image will be the profile picture, the second the banner picture';
-    } else {
-      groupModeBtn.classList.remove('active');
-      document.querySelectorAll('.group-checkbox').forEach(cb => {
-        cb.style.display = 'none';
-        cb.checked = false;
-      });
-      selectedImages.clear();
-      h2.innerHTML = "";
-      document.getElementById('id01').style.display = 'none';
-    }
-    toggleGroupButton();
-  };
-
-  async function toggleGroupButton() { //displays the group button if 2 checkboxes are checked
-    if (selectedImages.size === 2) {
-      groupBtn.style.display = "block";
-      UploadMessage.textContent = "";
-      groupBtn.onclick = function () {
-        const urls = Array.from(selectedImages);
-        profile = urls[0];
-        banner = urls[1];
-
-        document.getElementById('profileContainer').innerHTML = `
-        <h3>Profile</h3>
-        <img src="${profile}" style="width:250px; border:3px solid #ffffff;">`;
-        document.getElementById('bannerContainer').innerHTML = `
-        <h3>Banner</h3>
-        <img src="${banner}" style="width:250px; border:3px solid #ffffff;">`;
-        console.log(profile, banner);
-
-        document.getElementById('id01').style.display = 'flex';
-      };
-    } else {
-      groupBtn.style.display = "none";
-      document.getElementById('id01').style.display = 'none';
-    }
-  }
-
-  async function confirmGroup() {  //button that sends data to supabase
-    loader.style.display = "block";
-    const { data, error } = await supabaseClient
-      .from('groups')
-      .insert([{ profile_url: profile, banner_url: banner }]);
-
-    if (error) {
-      console.error('Error inserting URLs into database:', error);
-      alert('Failed to save group!');
-      return;
-    }
-    loader.style.display = "none";
-    UploadMessage.innerHTML = "- - - - Uploaded! - - - -";
-    document.getElementById('id01').style.display = 'flex';
-    selectedImages.clear();
-  }
-
-  //LOGIN STUFF------------------------------------------------------------------------------------------------------------------------------------------------
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = emailInput.value;
-    const password = passwordInput.value;
-
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-
-    if (error) {
-      authStatus.textContent = `Error: ${error.message}`;
-      console.error('Login error:', error);
-      alert('Cant find user, please sign in');
-    } else {
-      console.log('Login successful:', data);
-      setTimeout(() => {
-        loginModal.style.display = 'none';
-      }, 3500);
-    }
-  });
-
-  logoutBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    // Get the current session
-    const { data: { session }, error: getSessionError } = await supabaseClient.auth.getSession();
-    if (getSessionError) {
-      console.error('Error getting session before logout:', getSessionError.message);
-      alert('Could not check session status. Please try again.');
-      return;
-    } if (!session) {
-      console.warn('No active session found, cannot log out.');
-      alert('You are not logged in.');
-      updateUIForAuth(null);
-      return;
-    }
-    // If a session exists, proceed with sign out
-    const { error: signOutError } = await supabaseClient.auth.signOut();
-    if (signOutError) {
-      console.error('Error logging out:', signOutError.message);
-      alert(`Error logging out: ${signOutError.message}`);
-    } else {
-      console.log('User logged out successfully.');
-    }
-  });
-
-  //SEARCH STUFF------------------------------------------------------------------------------------------------------------------------------------------------
-  async function performSearch() {
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    const selectedType = document.getElementById("aorb").value;
-
-    const { data, error } = await supabaseClient
-      .from('photos')
-      .select('*');
-
-    if (error) {
-      console.error("Search error:", error);
-      searchResultsGal.innerHTML = "<p>Error searching</p>";
-      return;
-    }
-
-    gallery.style.display = "none";
-    searchResultsGal.style.display = "inline-block";
-
-    let filtered = data;
-    if (searchTerm) {
-      filtered = filtered.filter(photo =>
-        Array.isArray(photo.tags) &&
-        photo.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-      );
-    } else if (selectedType !== "both") {
-      filtered = filtered.filter(photo =>
-        Array.isArray(photo.categories) &&
-        photo.categories.map(c => c.toLowerCase()).includes(selectedType)
-      );
-    }
-    displayResults(filtered);
-
-    // Reapply group mode logic after filtering
-    if (groupModeEnabled) {
-      document.querySelectorAll('.group-checkbox').forEach(cb => cb.style.display = 'block');
-    }
-  }
-
-  searchButton.addEventListener("click", async (e) => {
-    e.preventDefault();
-    await performSearch();
-  });
-
-  document.getElementById("aorb").addEventListener("change", performSearch);
-
-  async function displayResults(results) {
-    searchResultsGal.innerHTML = "";
-    const maxSelections = 2;
-    const checkboxes = [];
-
-    results.forEach(photo => {
-      const container = document.createElement('div');
-      container.classList.add('photo-container');
-
-      const img = document.createElement('img');
-      img.src = photo.image_url;
-      img.style.width = '240px';
-      img.style.margin = '5px';
-
-      img.onclick = function () {
-        if (groupModeEnabled) {
-          const checkbox = container.querySelector('.group-checkbox');
-          checkbox.checked = !checkbox.checked;
-          checkbox.dispatchEvent(new Event('change'));
-        } else {
-          imageModal.style.display = "flex";
-          modalImg.src = photo.image_url;
-          modalTags.innerHTML = "";
-          modalCategories.innerHTML = "";
-
-          if (Array.isArray(photo.tags)) {
-            photo.tags.forEach(tag => {
-              const span = document.createElement("span");
-              span.textContent = tag;
-              modalTags.appendChild(span);
-            });
-          }
-
-          if (Array.isArray(photo.categories)) {
-            photo.categories.forEach(cat => {
-              const span = document.createElement("span");
-              span.textContent = cat;
-              modalCategories.appendChild(span);
-            });
-          }
-        }
-      };
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.style.display = 'none';
-      checkbox.classList.add("group-checkbox");
-      checkboxes.push(checkbox);
-
-      checkbox.addEventListener('change', function () {
-        const checkedCount = checkboxes.filter(cb => cb.checked).length;
-        if (checkedCount > maxSelections) {
-          this.checked = false;
-          return;
-        }
-        if (checkbox.checked) {
-          selectedImages.add(photo.image_url);
-          console.log(photo.id, photo.image_url)
-          console.log(Array.from(selectedImages))
-        } else {
-          selectedImages.delete(photo.image_url);
-        }
-        toggleGroupButton();
-      });
-
-      const button = document.createElement('button');
-      button.textContent = "delete";
-      button.classList.add('delete-button');
-      button.addEventListener("click", () => deletePhoto(photo));
-
-      const tooltip = document.createElement('div');
-      tooltip.classList.add('tags-tooltip', 'tags-overlay');
-      tooltip.textContent = Array.isArray(photo.tags)
-        ? photo.tags.join(', ')
-        : "No tags";
-
-      container.appendChild(img);
-      container.appendChild(tooltip);
-      container.appendChild(button);
-      container.appendChild(checkbox);
-      searchResultsGal.appendChild(container);
-    });
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    updateUIForAuth(session);
-  }
-
+  loadPreview();
 </script>
 
 </html>

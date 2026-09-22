@@ -1,17 +1,26 @@
 /* MAIN PAGE CSS */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Inter, sans-serif;
+}
 
 .mainbody {
-  font-family: Inter, sans-serif;
   margin: 4;
   font-weight: bold;
   padding: 10px;
   background: #000000;
   color: #edebeb;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .main {
   margin-left: 165px;
+  background: #000000;
   transition: 0.3s ease;
+  margin-right: -10px;
 }
 
 .main.full-width {
@@ -27,17 +36,20 @@
   background: #000000fc;
   padding: 0px 1px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 5px;
 }
 
 .top-search input {
   flex: 1;
+  min-width: 0;
   max-width: 350px;
   padding: 10px 12px;
   border: 2px solid #ffffff;
   background: #000000;
   color: white;
+  box-sizing: border-box;
 }
 
 #aorb {
@@ -56,7 +68,7 @@
   z-index: 9;
   top: 0;
   left: 0;
-  background-color: #000;
+  background-color: #000000;
   border-right: 4px solid #ffffff;
   overflow-x: hidden;
   padding-top: 15px;
@@ -80,6 +92,95 @@
   background: #ffffff;
 }
 
+@media (max-width: 700px) {
+  .navbar {
+    position: static;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-right: none;
+    border-bottom: 4px solid #ffffff;
+    padding: 10px;
+    gap: 10px;
+    box-sizing: border-box;
+  }
+
+  .navbar a {
+    width: auto;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .main,
+  .main.full-width {
+    margin-left: 0;
+  }
+
+  .top-search {
+    left: 0;
+  }
+}
+
+.preview {
+  position: relative;
+  max-height: 890px;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.preview .gallery-grid {
+  column-width: auto;
+  column-count: 6;
+  padding-top: 0;
+}
+
+@media (max-width: 1000px) {
+  .preview .gallery-grid {
+    column-count: 4;
+  }
+}
+
+@media (max-width: 700px) {
+  .preview .gallery-grid {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview .gallery-grid {
+    column-count: 2;
+  }
+}
+
+.preview .photo-container {
+  display: auto;
+  width: 100%;
+  margin: 0 0 15px;
+  box-sizing: border-box;
+}
+
+.preview .photo-container img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.preview-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.494) 0%, rgba(0, 0, 0, 0.794) 75%, #000 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
+}
 
 input {
   width: 300px;
@@ -128,55 +229,17 @@ button:hover {
 }
 
 .closeBtn {
-  background-color: #1a3bf9;
+  background-color: #00020e;
   float: right;
 }
 
 .gallery-grid {
-  flex-wrap: wrap;
-  column-width: 240px;
-  gap: 18px;
+  column-width: 258px;
+  column-gap: 15px;
   padding: 10px;
   overflow: hidden;
   margin-left: 0 !important;
   padding-left: 0 !important;
-}
-
-
-@media (min-width: 2000px) {
-  .gallery-grid {
-    column-count: 8;
-  }
-}
-
-@media (min-width: 2400px) {
-  .gallery-grid {
-    column-count: 9;
-  }
-}
-
-@media (max-width: 1600px) {
-  .gallery-grid {
-    column-count: 6;
-  }
-}
-
-@media (max-width: 1200px) {
-  .gallery-grid {
-    column-count: 5;
-  }
-}
-
-@media (max-width: 768px) {
-  .gallery-grid {
-    column-count: 3;
-  }
-}
-
-@media (max-width: 480px) {
-  .gallery-grid {
-    column-count: 1;
-  }
 }
 
 .myModal {
@@ -199,12 +262,11 @@ button:hover {
   animation: zoom 0.6s;
 }
 
-
 .photo-container {
   display: inline-block;
   position: relative;
   width: 250px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   background: #000000;
   break-inside: avoid;
   border: 4px solid #ffffff;
@@ -315,7 +377,7 @@ button:hover {
 .tags-tooltip {
   position: relative;
   display: inline-block;
-  margin: 5px;
+  margin: 1px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
@@ -325,13 +387,14 @@ button:hover {
   position: absolute;
   bottom: 0;
   left: 0;
+  right: 0;
   width: 100%;
-  background: #000000c6;
-  color: white;
-  padding: 4px;
+  background: #000000f8;
+  color: rgb(255, 255, 255);
+  padding: 1px;
   text-align: center;
   font-size: 15px;
-  font-weight: 750;
+  font-weight: 500;
   opacity: 0;
   pointer-events: none;
 }
@@ -790,37 +853,207 @@ hr.new5 {
 /* LOGIN CSS */
 
 #loginModal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: #000000aa;
+  min-height: calc(100vh - 60px);
   display: flex;
   justify-content: center;
   align-items: center;
+  background-image: url("bg.jpg");
+  background-size: cover;
+  background-position: center;
+  color: #ffffffcf;
   padding: 20px;
-  box-sizing: border-box;
-}
-
-.modal .container input[type="text"],
-.modal .container input[type="password"] {
-  width: 100%;
-  padding: 10px;
-  color: #ffffff;
-  background-color: #000;
-  margin-top: 8px;
-  margin-bottom: 19px;
-  box-sizing: border-box;
-  border: 1px solid #ffffff;
 }
 
 #loginBtn {
   text-align: center;
   align-items: center;
   position: sticky;
-  top: 0;
+  font-size: 35px;
+  top: 20;
   z-index: 12;
   padding-left: 5%;
   padding-right: 5%;
   margin-inline-start: 43%;
+}
+
+.modal-content {
+  color: #ffffffcf;
+  background: #000000fe;
+  backdrop-filter: blur(12px);
+  border: 5px solid #ffffff;
+  padding: 48px 48px 44px;
+  width: clamp(320px, 92vw, 480px);
+  box-shadow: 0 25px 50px -12px #000000cf;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-brand {
+  align-self: center;
+  margin-bottom: 28px;
+  padding-bottom: 4px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  border-bottom: 3px solid #ffffff;
+  transition: opacity 0.2s ease;
+}
+
+.auth-brand:hover {
+  opacity: 0.7;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.modal-eyebrow {
+  margin: 0 0 4px;
+  color: #b9b9b9;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.auth-title {
+  margin: 0 auto;
+  padding-top: 4px;
+  border-bottom: none;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.auth-title::after {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 3px;
+  margin: 12px auto 0;
+  background: #ffffff;
+}
+
+.auth-form .container,
+form > .container {
+  margin-bottom: 4px;
+}
+
+.auth-btn {
+  display: block;
+  width: 100%;
+  background-color: #000000;
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  border: 3px solid #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 50px 0px 1px;
+  padding: 10px 2px;
+  transition: 0.2s ease;
+}
+
+.auth-btn:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+#form-status {
+  display: block;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.auth-footer {
+  margin-top: 28px;
+  text-align: center;
+  padding-top: 22px;
+  border-top: 1px solid #fffffff6;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.auth-footer a {
+  display: inline-block;
+  color: #ffffff;
+  text-decoration: none;
+  margin-left: 6px;
+  padding: 4px 10px;
+  font-weight: 600;
+  font-size: 14px;
+  border: 2px solid #fdfdfdfd;
+  transition: 0.2s ease;
+}
+
+.auth-footer a:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #000000;
+  transform: translateY(-2px);
+}
+
+.modal .container label {
+  display: block;
+  text-align: left;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+
+.form-group:first-child label {
+  margin-top: 0;
+}
+
+.modal .container input[type="text"],
+.modal .container input[type="password"] {
+  width: 100%;
+  padding: 11px 12px;
+  color: #ffffff;
+  background-color: #000000;
+  margin-top: 0;
+  margin-bottom: 0;
+  box-sizing: border-box;
+  border: 2px solid #ffffff;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.modal .container input[type="text"]:focus,
+.modal .container input[type="password"]:focus {
+  outline: none;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group input {
+  border: 2px solid #ffffff;
+}
+
+.form-group.error input {
+  border-color: #ff4d4d;
+}
+
+.form-group.success input {
+  border-color: #4caf50;
+}
+
+.form-group .error-message {
+  display: block;
+  color: #ff4d4d;
+  font-size: 12px;
+  margin-top: 6px;
+  min-height: 14px;
 }

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="loginModal" class="modal" style="display: block;">
+    <div class="modal-content animate">
+      <div class="auth-header">
+        <p class="modal-eyebrow">Welcome back</p>
+        <h1 class="auth-title">Login</h1>
+      </div>
+      <form id="loginForm">
+        <div class="container">
+          <div class="form-group">
+            <label for="email"><b>Email</b></label>
+            <input type="text" placeholder="Enter Email" id="email">
+            <small class="error-message"></small>
+          </div>
+<br>
+          <div class="form-group">
+            <label for="password"><b>Password</b></label>
+            <input type="password" placeholder="Enter Password" id="password">
+            <small class="error-message"></small>
+          </div>
+        </div>
+        <small id="form-status" class="error-message"></small>
+        <button type="submit" id="loginbtn" class="auth-btn" >Login</button>
+      </form>
+      <div class="auth-footer">
+          Don't have an account? <a href="register.html">Register here</a>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    const supabaseUrl = 'https://agikgxernopojicgkpfy.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnaWtneGVybm9wb2ppY2drcGZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NjE1NDksImV4cCI6MjA3MDEzNzU0OX0.8r5eWuWRhcF9pitenwVM-D-8uXlDGqD4zGDk1PxrmS0';
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginbtn');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const formStatus = document.getElementById('form-status');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function showError(input, message) {
+      const formGroup = input.parentElement;
+      formGroup.className = 'form-group error';
+      const small = formGroup.querySelector('.error-message');
+      small.textContent = message;
+    }
+
+    function showSuccess(input) {
+      const formGroup = input.parentElement;
+      formGroup.className = 'form-group success';
+      const small = formGroup.querySelector('.error-message');
+      small.textContent = '';
+    }
+
+    function validateForm() {
+      let isValid = true;
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (email === '') {
+        showError(emailInput, 'Email is required.');
+        isValid = false;
+      } else if (!emailRegex.test(email)) {
+        showError(emailInput, 'Please enter a valid email address.');
+        isValid = false;
+      } else {
+        showSuccess(emailInput);
+      }
+
+      if (password === '') {
+        showError(passwordInput, 'Password is required.');
+        isValid = false;
+      } else {
+        showSuccess(passwordInput);
+      }
+
+      return isValid;
+    }
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      formStatus.textContent = '';
+
+      if (!validateForm()) {
+        return;
+      }
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      loginBtn.disabled = true;
+
+      try {
+        // Checks the Supabase auth database for a matching user/password.
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          console.error('Login error:', error);
+          formStatus.textContent = 'Incorrect email or password.';
+        } else {
+          console.log('Login successful:', data);
+          window.location.href = "gallery.html";
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        formStatus.textContent = 'Something went wrong. Please try again.';
+      } finally {
+        loginBtn.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+
+</html>
