@@ -16,20 +16,37 @@
     <button id="groupBtn" style="display: none;">Group</button>
   </div>
 
-  <div class="main">
+ <div class="main">
     <div class="top-search">
       <input type="text" id="searchInput" placeholder="Search tags...">
       <select name="aorb" id="aorb" style="float: right;">
-         <option value="both">All</option>
+        <option value="both" selected>All</option>
         <option value="avatar">Avatars</option>
         <option value="banner">Banners</option>
       </select>
       <button id="searchButton">Search</button>
       <h2 id="h2" class="h2"></h2>
+      <br>
+      <div id="pageSizeControls" class="page-size-controls">
+        <span class="page-size-label">Show:</span>
+        <button type="button" class="page-size-btn" data-size="6">6</button>
+        <button type="button" class="page-size-btn" data-size="12">12</button>
+        <button type="button" class="page-size-btn" data-size="24">24</button>
+        <button type="button" class="page-size-btn" data-size="48">48</button>
+        <button type="button" class="page-size-btn" data-size="all">Show All</button>
+      </div>
     </div>
+
+
 
     <div id="gallery" class="gallery-grid"></div>
     <div id="searchGallery" class="gallery-grid"></div>
+
+    <div id="paginationControls" class="pagination-controls" style="display: none;">
+      <button id="prevPageBtn" type="button" class="page-nav" aria-label="Previous page">&#8249;</button>
+      <div id="pageNumbers" class="page-numbers"></div>
+      <button id="nextPageBtn" type="button" class="page-nav" aria-label="Next page">&#8250;</button>
+    </div>
   </div>
 
   <!--GROUP STUFF-->
@@ -115,6 +132,11 @@
   const modalCategories = document.getElementById("modalCategories");
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
+  const paginationControls = document.getElementById('paginationControls');
+  const prevPageBtn = document.getElementById('prevPageBtn');
+  const nextPageBtn = document.getElementById('nextPageBtn');
+  const pageNumbers = document.getElementById('pageNumbers');
+  const pageSizeButtons = document.querySelectorAll('.page-size-btn');
 
   window.onscroll = function () { scrollFunction() };
   const selectedImages = new Set();
@@ -137,30 +159,52 @@
   }
 
   //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
+  let isAdmin = false;
+  let isAdminCheckedFor = null;
+
+  async function checkIsAdmin(userId) {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+    return !!(data && data.is_admin);
+  }
+
   async function updateUIForAuth(session) {
     const photoContainers = document.querySelectorAll('.photo-container');
     const mainDiv = document.querySelector('.main');
     if (session) {  // User is logged in
+      if (isAdminCheckedFor !== session.user.id) {
+        isAdmin = await checkIsAdmin(session.user.id);
+        isAdminCheckedFor = session.user.id;
+      }
       navbar.style.display = "flex";
       dropdown.style.display = "block";
       searchInput.style.display = "block";
       searchButton.style.display = "block";
-      loginModal.style.display = 'none';
+
       mainDiv.classList.remove('full-width');
       photoContainers.forEach(container => {
-        container.classList.add('logged-in');
+        container.classList.toggle('can-delete', isAdmin);
       });
     } else {  // User is logged out
-      loginBtn.style.display = 'block';
+      isAdmin = false;
+      isAdminCheckedFor = null;
       dropdown.style.display = "none";
       navbar.style.display = "none";
       searchInput.style.display = "none";
       searchButton.style.display = "none";
       mainDiv.classList.add('full-width');
       photoContainers.forEach(container => {
-        container.classList.remove('logged-in');
+        container.classList.remove('can-delete');
       });
-      
+
       if (groupModeEnabled) {
         groupModeEnabled = false;
         groupModeBtn.classList.remove('active');
@@ -181,6 +225,10 @@
     if (error) {
       console.error('Error getting session:', error);
     }
+    if (!session) {
+      window.location.href = 'main.html';
+      return;
+    }
     updateUIForAuth(session);
   }
 
@@ -188,7 +236,13 @@
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
     console.log('Auth state changed:', event, session);
-    updateUIForAuth(session);
+    if (event === 'SIGNED_OUT') {
+      window.location.href = 'main.html';
+      return;
+    }
+    if (session) {
+      updateUIForAuth(session);
+    }
   });
 
   //GALLERY STUFF------------------------------------------------------------------------------------------------------------------------------------------------
@@ -201,8 +255,208 @@
     return array;
   }
 
-  async function loadPhotos() {
+  const PAGE_SIZE_OPTIONS = [6, 24, 48];
+  let PAGE_SIZE = 24;
+  let showAllMode = false;
+  const maxSelections = 2;
+  let allPhotos = [];
+  let currentPhotos = [];
+  let currentPage = 1;
+  let activeContainer = gallery;
 
+  function setPageSize(size) {
+    if (size === 'all') {
+      showAllMode = true;
+    } else {
+      showAllMode = false;
+      PAGE_SIZE = Number(size);
+    }
+    currentPage = 1;
+    updatePageSizeButtonsUI();
+    try { localStorage.setItem('gallery_page_size', size); } catch (e) { }
+    renderCurrentPage();
+  }
+
+  function updatePageSizeButtonsUI() {
+    pageSizeButtons.forEach(btn => {
+      const active = showAllMode
+        ? btn.dataset.size === 'all'
+        : Number(btn.dataset.size) === PAGE_SIZE;
+      btn.classList.toggle('active', active);
+    });
+  }
+
+  pageSizeButtons.forEach(btn => {
+    btn.addEventListener('click', () => setPageSize(btn.dataset.size));
+  });
+
+  (function restorePageSizePref() {
+    let saved = null;
+    try { saved = localStorage.getItem('gallery_page_size'); } catch (e) { }
+    if (saved === 'all') {
+      showAllMode = true;
+    } else if (saved && PAGE_SIZE_OPTIONS.includes(Number(saved))) {
+      PAGE_SIZE = Number(saved);
+    }
+    updatePageSizeButtonsUI();
+  })();
+
+  function renderPhotoCard(photo) {
+    const container = document.createElement('div');
+    container.classList.add('photo-container');
+    container.classList.toggle('can-delete', isAdmin);
+
+    const img = document.createElement('img');
+    img.src = photo.image_url;
+
+    img.onclick = function () {
+      if (groupModeEnabled) {
+        const checkbox = container.querySelector('.group-checkbox');
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      } else {
+        imageModal.style.display = "flex";
+        modalImg.src = photo.image_url;
+        modalTags.innerHTML = "";
+        modalCategories.innerHTML = "";
+
+        if (Array.isArray(photo.tags)) {
+          photo.tags.forEach(tag => {
+            const span = document.createElement("span");
+            span.textContent = tag;
+            modalTags.appendChild(span);
+          });
+        }
+
+        if (Array.isArray(photo.categories)) {
+          photo.categories.forEach(cat => {
+            const span = document.createElement("span");
+            span.textContent = cat;
+            modalCategories.appendChild(span);
+          });
+        }
+      }
+    };
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.style.display = groupModeEnabled ? 'block' : 'none';
+    checkbox.checked = selectedImages.has(photo.image_url);
+    checkbox.classList.add("group-checkbox");
+
+    checkbox.addEventListener('change', function () {
+      if (checkbox.checked && selectedImages.size >= maxSelections) {
+        checkbox.checked = false;
+        return;
+      }
+      if (checkbox.checked) {
+        selectedImages.add(photo.image_url);
+      } else {
+        selectedImages.delete(photo.image_url);
+      }
+      toggleGroupButton();
+    });
+
+    const button = document.createElement('button');
+    button.textContent = "delete";
+    button.classList.add('delete-button');
+    button.addEventListener("click", () => deletePhoto(photo));
+
+    const tooltip = document.createElement('div');
+    tooltip.classList.add('tags-tooltip', 'tags-overlay');
+    let tagsArray = [];
+    if (Array.isArray(photo.tags)) {
+      tagsArray = photo.tags.map(t => t.toLowerCase());
+    } else if (typeof photo.tags === 'string' && photo.tags.trim() !== '') {
+      tagsArray = photo.tags
+        .split(',')
+        .map(t => t.trim().toLowerCase())
+        .filter(Boolean);
+    }
+    tooltip.textContent = tagsArray.length ? tagsArray.join(', ') : 'No tags';
+
+    container.appendChild(img);
+    container.appendChild(tooltip);
+    container.appendChild(button);
+    container.appendChild(checkbox);
+    return container;
+  }
+
+  function goToPage(page) {
+    currentPage = page;
+    renderCurrentPage();
+    topFunction();
+  }
+
+  function buildPageList(current, total) {
+    const pages = [];
+    for (let i = 1; i <= total; i++) {
+      if (i === 1 || i === total || (i >= current - 1 && i <= current + 1)) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== '...') {
+        pages.push('...');
+      }
+    }
+    return pages;
+  }
+
+  function renderPaginationControls(totalPages) {
+    pageNumbers.innerHTML = "";
+    buildPageList(currentPage, totalPages).forEach(entry => {
+      if (entry === '...') {
+        const span = document.createElement('span');
+        span.className = 'page-ellipsis';
+        span.textContent = '...';
+        pageNumbers.appendChild(span);
+        return;
+      }
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'page-number' + (entry === currentPage ? ' active' : '');
+      btn.textContent = entry;
+      btn.addEventListener('click', () => goToPage(entry));
+      pageNumbers.appendChild(btn);
+    });
+
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
+  }
+
+  function renderCurrentPage() {
+    if (showAllMode) {
+      activeContainer.innerHTML = "";
+      currentPhotos.forEach(photo => {
+        activeContainer.appendChild(renderPhotoCard(photo));
+      });
+      paginationControls.style.display = "none";
+      return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(currentPhotos.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    activeContainer.innerHTML = "";
+    const start = (currentPage - 1) * PAGE_SIZE;
+    currentPhotos.slice(start, start + PAGE_SIZE).forEach(photo => {
+      activeContainer.appendChild(renderPhotoCard(photo));
+    });
+
+    paginationControls.style.display = currentPhotos.length > PAGE_SIZE ? "flex" : "none";
+    renderPaginationControls(totalPages);
+  }
+
+  prevPageBtn.addEventListener("click", () => {
+    if (currentPage <= 1) return;
+    goToPage(currentPage - 1);
+  });
+
+  nextPageBtn.addEventListener("click", () => {
+    const totalPages = Math.max(1, Math.ceil(currentPhotos.length / PAGE_SIZE));
+    if (currentPage >= totalPages) return;
+    goToPage(currentPage + 1);
+  });
+
+  async function loadPhotos() {
     const { data, error } = await supabaseClient
       .from('photos')
       .select();
@@ -213,98 +467,12 @@
     }
 
     shuffleArray(data);
+    allPhotos = data;
+    currentPhotos = allPhotos;
+    activeContainer = gallery;
+    currentPage = 1;
+    renderCurrentPage();
 
-    const maxSelections = 2;
-    const checkboxes = [];
-
-    data.forEach(photo => {
-      const container = document.createElement('div');
-      container.classList.add('photo-container');
-
-      const img = document.createElement('img');
-      img.src = photo.image_url;
-      img.style.width = '240px';
-      img.style.margin = '5px';
-
-      img.onclick = function () {
-        if (groupModeEnabled) {
-          const checkbox = this.parentElement.querySelector('.group-checkbox');
-          checkbox.checked = !checkbox.checked;
-          checkbox.dispatchEvent(new Event('change'));
-        } else {
-          imageModal.style.display = "flex";
-          modalImg.src = photo.image_url;
-          modalTags.innerHTML = "";
-          modalCategories.innerHTML = "";
-
-          if (Array.isArray(photo.tags)) {
-            photo.tags.forEach(tag => {
-              const span = document.createElement("span");
-              span.textContent = tag;
-              modalTags.appendChild(span);
-            });
-          }
-
-          if (Array.isArray(photo.categories)) {
-            photo.categories.forEach(cat => {
-              const span = document.createElement("span");
-              span.textContent = cat;
-              modalCategories.appendChild(span);
-            });
-          }
-        }
-
-      };
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.style.display = 'none';
-      checkbox.classList.add("group-checkbox");
-      checkboxes.push(checkbox);
-
-      checkbox.addEventListener('change', function () {
-        const checkedCount = checkboxes.filter(cb => cb.checked).length;
-        if (checkedCount > maxSelections) {
-          this.checked = false;
-          return;
-        }
-        if (checkbox.checked) {
-          selectedImages.add(photo.image_url);
-          console.log(photo.id, photo.image_url)
-          console.log(Array.from(selectedImages))
-        } else {
-          selectedImages.delete(photo.image_url);
-        }
-        toggleGroupButton();
-      });
-
-      const button = document.createElement('button');
-      button.textContent = "delete";
-      button.classList.add('delete-button');
-      button.addEventListener("click", () => {
-        deletePhoto(photo)
-      })
-
-      const tooltip = document.createElement('div');
-      tooltip.classList.add('tags-tooltip');
-      tooltip.classList.add('tags-overlay');
-      let tagsArray = [];
-      if (Array.isArray(photo.tags)) {
-        tagsArray = photo.tags.map(t => t.toLowerCase());
-      } else if (typeof photo.tags === 'string' && photo.tags.trim() !== '') {
-        tagsArray = photo.tags
-          .split(',')
-          .map(t => t.trim().toLowerCase())
-          .filter(Boolean);
-      }
-      tooltip.textContent = tagsArray.length ? tagsArray.join(', ') : 'No tags';
-
-      container.appendChild(img);
-      container.appendChild(tooltip);
-      container.appendChild(button);
-      container.appendChild(checkbox);
-      gallery.appendChild(container);
-    });
     const { data: { session } } = await supabaseClient.auth.getSession();
     updateUIForAuth(session);
   }
@@ -316,6 +484,11 @@
   };
 
   async function deletePhoto(photo) {
+    if (!isAdmin) {
+      alert('Only admins can delete photos.');
+      return;
+    }
+
     const filePath = photo.image_url.split('/storage/v1/object/public/images/uploads/')[1];
 
     const { error: storageError } = await supabaseClient.storage
@@ -327,8 +500,10 @@
       .delete()
       .eq('id', photo.id);
 
-    const container = document.querySelector(`img[src="${photo.image_url}"]`).parentElement;
-    container.remove();
+    allPhotos = allPhotos.filter(p => p.id !== photo.id);
+    currentPhotos = currentPhotos.filter(p => p.id !== photo.id);
+    selectedImages.delete(photo.image_url);
+    renderCurrentPage();
   }
 
   loadPhotos();
@@ -420,7 +595,7 @@
       alert(`Error logging out: ${signOutError.message}`);
     } else {
       console.log('User logged out successfully.');
-         window.location.href = "index.html";
+      window.location.href = "main.html";
     }
   });
 
@@ -428,6 +603,17 @@
   async function performSearch() {
     const searchTerm = searchInput.value.toLowerCase().trim();
     const selectedType = document.getElementById("aorb").value;
+
+    if (!searchTerm && selectedType === "both") {
+      searchResultsGal.style.display = "none";
+      searchResultsGal.innerHTML = "";
+      gallery.style.display = "inline-block";
+      currentPhotos = allPhotos;
+      activeContainer = gallery;
+      currentPage = 1;
+      renderCurrentPage();
+      return;
+    }
 
     const { data, error } = await supabaseClient
       .from('photos')
@@ -454,12 +640,15 @@
         photo.categories.map(c => c.toLowerCase()).includes(selectedType)
       );
     }
-    displayResults(filtered);
 
-    // Reapply group mode logic after filtering
-    if (groupModeEnabled) {
-      document.querySelectorAll('.group-checkbox').forEach(cb => cb.style.display = 'block');
+    if (selectedType === "both") {
+      shuffleArray(filtered);
     }
+
+    currentPhotos = filtered;
+    activeContainer = searchResultsGal;
+    currentPage = 1;
+    renderCurrentPage();
   }
 
   searchButton.addEventListener("click", async (e) => {
@@ -468,92 +657,6 @@
   });
 
   document.getElementById("aorb").addEventListener("change", performSearch);
-
-  async function displayResults(results) {
-    searchResultsGal.innerHTML = "";
-    const maxSelections = 2;
-    const checkboxes = [];
-
-    results.forEach(photo => {
-      const container = document.createElement('div');
-      container.classList.add('photo-container');
-
-      const img = document.createElement('img');
-      img.src = photo.image_url;
-      img.style.width = '240px';
-      img.style.margin = '5px';
-
-      img.onclick = function () {
-        if (groupModeEnabled) {
-          const checkbox = container.querySelector('.group-checkbox');
-          checkbox.checked = !checkbox.checked;
-          checkbox.dispatchEvent(new Event('change'));
-        } else {
-          imageModal.style.display = "flex";
-          modalImg.src = photo.image_url;
-          modalTags.innerHTML = "";
-          modalCategories.innerHTML = "";
-
-          if (Array.isArray(photo.tags)) {
-            photo.tags.forEach(tag => {
-              const span = document.createElement("span");
-              span.textContent = tag;
-              modalTags.appendChild(span);
-            });
-          }
-
-          if (Array.isArray(photo.categories)) {
-            photo.categories.forEach(cat => {
-              const span = document.createElement("span");
-              span.textContent = cat;
-              modalCategories.appendChild(span);
-            });
-          }
-        }
-      };
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.style.display = 'none';
-      checkbox.classList.add("group-checkbox");
-      checkboxes.push(checkbox);
-
-      checkbox.addEventListener('change', function () {
-        const checkedCount = checkboxes.filter(cb => cb.checked).length;
-        if (checkedCount > maxSelections) {
-          this.checked = false;
-          return;
-        }
-        if (checkbox.checked) {
-          selectedImages.add(photo.image_url);
-          console.log(photo.id, photo.image_url)
-          console.log(Array.from(selectedImages))
-        } else {
-          selectedImages.delete(photo.image_url);
-        }
-        toggleGroupButton();
-      });
-
-      const button = document.createElement('button');
-      button.textContent = "delete";
-      button.classList.add('delete-button');
-      button.addEventListener("click", () => deletePhoto(photo));
-
-      const tooltip = document.createElement('div');
-      tooltip.classList.add('tags-tooltip', 'tags-overlay');
-      tooltip.textContent = Array.isArray(photo.tags)
-        ? photo.tags.join(', ')
-        : "No tags";
-
-      container.appendChild(img);
-      container.appendChild(tooltip);
-      container.appendChild(button);
-      container.appendChild(checkbox);
-      searchResultsGal.appendChild(container);
-    });
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    updateUIForAuth(session);
-  }
 
 </script>
 

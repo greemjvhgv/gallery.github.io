@@ -85,15 +85,26 @@
       return;
     }
 
-    if (session) {
-      currentUser = session.user; // Store user data
-      console.log('User is logged in on upload page:', currentUser.email);
-    } else {
-      console.log('No active session found on upload page.');
+    if (!session) {
+      window.location.href = 'main.html';
+      return;
     }
+
+    currentUser = session.user; // Store user data
+    console.log('User is logged in on upload page:', currentUser.email);
   }
 
   initializePageAuth();
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      window.location.href = 'main.html';
+      return;
+    }
+    if (session) {
+      currentUser = session.user;
+    }
+  });
 
   fileInput.addEventListener('change', (event) => {
     UploadMessage.innerHTML = "";

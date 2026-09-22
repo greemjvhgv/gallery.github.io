@@ -47,17 +47,40 @@
     }
 
     //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
+    let isAdmin = false;
+    let isAdminCheckedFor = null;
+
+    async function checkIsAdmin(userId) {
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error checking admin status:', error);
+            return false;
+        }
+        return !!(data && data.is_admin);
+    }
+
     async function updateUIForAuth(session) {
         const photoContainers = document.querySelectorAll('.group-container');
         if (session) {  // User is logged in
+            if (isAdminCheckedFor !== session.user.id) {
+                isAdmin = await checkIsAdmin(session.user.id);
+                isAdminCheckedFor = session.user.id;
+            }
             photoContainers.forEach(container => {
-                container.classList.add('logged-in');
+                container.classList.toggle('can-delete', isAdmin);
             });
         } else {  // User is logged out
+            isAdmin = false;
+            isAdminCheckedFor = null;
             groupgallery.style.display = 'none';
             message.innerHTML = "Please Log In to see Groups!"
             photoContainers.forEach(container => {
-                container.classList.remove('logged-in');
+                container.classList.remove('can-delete');
             });
         }
     }
@@ -67,10 +90,24 @@
         if (error) {
             console.error('Error getting session:', error);
         }
+        if (!session) {
+            window.location.href = 'main.html';
+            return;
+        }
         updateUIForAuth(session);
     }
 
     initializeAuth();
+
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+            window.location.href = 'main.html';
+            return;
+        }
+        if (session) {
+            updateUIForAuth(session);
+        }
+    });
 
     //GALLERY STUFF------------------------------------------------------------------------------------------------------------------------------------------------
     async function loadGroups() {
@@ -120,6 +157,11 @@
     }
 
     async function deleteGroup(group) {
+        if (!isAdmin) {
+            alert('Only admins can delete groups.');
+            return;
+        }
+
         const { error } = await supabaseClient
             .from('groups')
             .delete()
