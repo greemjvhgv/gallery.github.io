@@ -2,53 +2,92 @@
 <html>
 
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Upload Page</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="mainbody">
 
-  <div class="center-wrapper">
-    <form class="form">
-      <a href="gallery.html" class="back-link">Back to Gallery</a>
-      <h1>Upload a Photo</h1>
-      <hr style="width: 97%; margin-top: -20px; height: 2px; background-color: rgb(255, 255, 255);">
+  <div class="navbar">
+    <div class="navbar-brand">PINSTA</div>
+     <a href="upload.html" class="active" aria-current="page">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/></svg>
+      Upload Image
+    </a>
+    <a href="gallery.html">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Gallery
+    </a>
+    <a href="groups.html">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="14" height="14" rx="1"/><path d="M7 7V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-3"/></svg>
+      Group Gallery
+    </a>
+    <a href="#" id="logoutBtn">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Logout
+    </a>
+  </div>
 
-      <div id="mainRow">
+  <div class="main">
+    <header class="groups-hero">
+      <h1 class="page-title">Upload</h1>
+    </header>
 
-        <div id="imgContainer">
-          <input type="file" id="fileInput" />
-          <label for="fileInput" class="file-upload">File Upload</label>
-          <br />
-          <img id="preview" src="" alt="Preview will appear here" />
+    <section class="upload-layout">
+
+      <label for="fileInput" id="dropZone" class="upload-drop">
+        <input type="file" id="fileInput" accept="image/*" />
+        <div class="upload-drop-empty">
+          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+          <p class="upload-drop-title">Drop an image here</p>
+          <p class="upload-drop-hint">or click to browse &middot; PNG, JPG, GIF, WEBP</p>
+        </div>
+        <img id="preview" class="upload-drop-preview" alt="Selected image preview" />
+      </label>
+
+      <div class="upload-details">
+
+        <div class="upload-field">
+          <span class="upload-label">File</span>
+          <div class="upload-file-row">
+            <span id="fileName" class="upload-file-name">No image selected</span>
+            <button type="button" id="clearFileBtn" class="upload-text-btn" hidden>Remove</button>
+          </div>
         </div>
 
-        <div id="rightContainer">
-          <div id="tagsContainer">
-            <input type="text" id="tagsInput" class="tagsinput" placeholder="Enter Tags Here" />
-          </div>
-
-          <div id="selectContainer">
-            <label>What does this fall under?</label>
-            <select name="aorb" id="aorb" style="float: right;">
-              <option value="avatar">Avatar</option>
-              <option value="banner">Banner</option>
-              <option value="both">Both</option>
-            </select>
-          </div>
-
+        <div class="upload-field">
+          <label for="tagsInput" class="upload-label">Tags</label>
+          <input type="text" id="tagsInput" class="upload-input" placeholder="e.g. anime, dark, aesthetic" autocomplete="off" />
+          <span class="upload-hint">Separate tags with commas</span>
         </div>
 
-      </div>
+        <div class="upload-field">
+          <span class="upload-label">Category</span>
+          <div class="upload-segments" role="radiogroup" aria-label="Category">
+            <label class="upload-segment">
+              <input type="radio" name="category" value="avatar" checked>
+              <span>Avatar</span>
+            </label>
+            <label class="upload-segment">
+              <input type="radio" name="category" value="banner">
+              <span>Banner</span>
+            </label>
+            <label class="upload-segment">
+              <input type="radio" name="category" value="both">
+              <span>Both</span>
+            </label>
+          </div>
+        </div>
 
-      <div id="uploadContainer">
-        <button id="uploadBtn" type="button" onclick="uploadImage()" class="button">Upload</button>
-      </div>
-      <div id="loader" class="loader" style="display: none;"></div>
-      <p id="uploadmessage"></p>
+        <button id="uploadBtn" type="button" class="upload-submit" disabled>Upload</button>
+        <p id="uploadStatus" class="upload-status" aria-live="polite"></p>
 
-    </form>
+      </div>
+    </section>
   </div>
 
 </body>
@@ -59,17 +98,20 @@
   const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
   const fileInput = document.getElementById('fileInput');
+  const dropZone = document.getElementById('dropZone');
   const preview = document.getElementById('preview');
-  const loader = document.getElementById('loader');
-  const uploadBtn = document.getElementById('uploadBtn')
+  const fileName = document.getElementById('fileName');
+  const clearFileBtn = document.getElementById('clearFileBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
   const tagsInput = document.getElementById('tagsInput');
-  const UploadMessage = document.getElementById('uploadmessage');
-  const selectInput = document.getElementById('aorb');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const logoutBtn = document.getElementById('logoutBtn');
   let selectedFile = null;
   let currentUser = null;
+  let previewUrl = null;
 
   function getCategories() {
-    const value = document.getElementById("aorb").value;
+    const value = document.querySelector('input[name="category"]:checked').value;
 
     if (value === "avatar") return ["avatar"];
     if (value === "banner") return ["banner"];
@@ -77,6 +119,12 @@
     return ["none"];
   }
 
+  function setStatus(text, state) {
+    uploadStatus.textContent = text;
+    uploadStatus.dataset.state = state || '';
+  }
+
+  //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
   async function initializePageAuth() {
     const { data: { session }, error } = await supabaseClient.auth.getSession();
 
@@ -86,19 +134,18 @@
     }
 
     if (!session) {
-      window.location.href = 'main.html';
+      window.location.href = 'index.html';
       return;
     }
 
-    currentUser = session.user; // Store user data
-    console.log('User is logged in on upload page:', currentUser.email);
+    currentUser = session.user;
   }
 
   initializePageAuth();
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
-      window.location.href = 'main.html';
+      window.location.href = 'index.html';
       return;
     }
     if (session) {
@@ -106,84 +153,141 @@
     }
   });
 
-  fileInput.addEventListener('change', (event) => {
-    UploadMessage.innerHTML = "";
-    selectedFile = event.target.files[0];
-    if (selectedFile) {
-      preview.src = URL.createObjectURL(selectedFile);
-      preview.style.display = 'block';
-      preview.style.maxWidth = '300px';
-      preview.style.maxHeight = '400px';
-    } else {
-      preview.src = '';
-      preview.style.display = 'none';
+  logoutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      console.error('Error logging out:', error.message);
+      alert(`Error logging out: ${error.message}`);
+      return;
     }
+    window.location.href = 'index.html';
   });
 
+  //FILE SELECTION------------------------------------------------------------------------------------------------------------------------------------------------
+  function setSelectedFile(file) {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrl = null;
+    }
 
+    if (file && !file.type.startsWith('image/')) {
+      setStatus('That file is not an image.', 'error');
+      file = null;
+    }
+
+    selectedFile = file || null;
+
+    if (selectedFile) {
+      previewUrl = URL.createObjectURL(selectedFile);
+      preview.src = previewUrl;
+      dropZone.classList.add('has-file');
+      fileName.textContent = selectedFile.name;
+      clearFileBtn.hidden = false;
+      uploadBtn.disabled = false;
+      setStatus('');
+    } else {
+      preview.removeAttribute('src');
+      dropZone.classList.remove('has-file');
+      fileName.textContent = 'No image selected';
+      clearFileBtn.hidden = true;
+      uploadBtn.disabled = true;
+      fileInput.value = '';
+    }
+  }
+
+  fileInput.addEventListener('change', (event) => {
+    setSelectedFile(event.target.files[0]);
+  });
+
+  clearFileBtn.addEventListener('click', () => setSelectedFile(null));
+
+  ['dragenter', 'dragover'].forEach(type => {
+    dropZone.addEventListener(type, (e) => {
+      e.preventDefault();
+      dropZone.classList.add('is-dragging');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(type => {
+    dropZone.addEventListener(type, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('is-dragging');
+    });
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) setSelectedFile(file);
+  });
+
+  //UPLOAD------------------------------------------------------------------------------------------------------------------------------------------------
   async function uploadImage() {
     if (!currentUser) {
-      alert("You must be logged in to upload photos!");
-      UploadMessage.textContent = 'Login required to upload.';
-      return; // Stop the function if not logged in
+      setStatus('You must be logged in to upload photos.', 'error');
+      return;
     }
 
     if (!selectedFile) {
-      alert("Please select a file first!");
+      setStatus('Please choose an image first.', 'error');
       return;
     }
 
-    const userId = currentUser.id;
     const filePath = `uploads/${Date.now()}_${selectedFile.name}`;
 
-    loader.style.display = "block";
-    UploadMessage.textContent = "";
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading…';
+    dropZone.classList.add('is-uploading');
+    setStatus('');
 
-    const { data, error: uploadError } = await supabaseClient
-      .storage
-      .from('images')
-      .upload(filePath, selectedFile);
+    try {
+      const { error: uploadError } = await supabaseClient
+        .storage
+        .from('images')
+        .upload(filePath, selectedFile);
 
-    if (uploadError) {
-      console.error('Error uploading image:', uploadError);
-      UploadMessage.textContent = `Upload failed: ${uploadError.message}`;
-      return;
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        setStatus(`Upload failed: ${uploadError.message}`, 'error');
+        return;
+      }
+
+      const { data: publicUrlData } = supabaseClient
+        .storage
+        .from("images")
+        .getPublicUrl(filePath);
+
+      const tags = tagsInput.value
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean);
+
+      const { error: insertError } = await supabaseClient
+        .from('photos')
+        .insert([{
+          image_url: publicUrlData.publicUrl,
+          tags: tags,
+          categories: getCategories(),
+          user_id: currentUser.id
+        }]);
+
+      if (insertError) {
+        console.error('Error inserting URL into database:', insertError);
+        setStatus(`Database error: ${insertError.message}`, 'error');
+        return;
+      }
+
+      tagsInput.value = "";
+      setSelectedFile(null);
+      setStatus('Uploaded! Add another, or head back to the gallery.', 'success');
+    } finally {
+      dropZone.classList.remove('is-uploading');
+      uploadBtn.textContent = 'Upload';
+      uploadBtn.disabled = !selectedFile;
     }
-
-    const { data: publicUrlData } = supabaseClient
-      .storage
-      .from("images")
-      .getPublicUrl(filePath);
-
-    const publicUrl = publicUrlData.publicUrl;
-
-    const tags = document.getElementById('tagsInput').value
-      .split(',')
-      .map(tag => tag.trim())
-      .filter(Boolean);
-
-    const categories = getCategories();
-
-    const { error: insertError } = await supabaseClient
-      .from('photos')
-      .insert([{
-        image_url: publicUrl,
-        tags: tags,
-        categories: categories,
-        user_id: userId
-      }]);
-
-    if (insertError) {
-      console.error('Error inserting URL into database:', insertError);
-      UploadMessage.textContent = `Database error: ${insertError.message}`;
-      return;
-    }
-
-    loader.style.display = "none";
-    UploadMessage.innerHTML = "- - - - Uploaded - - - -";
-    document.getElementById('tagsInput').value = "";
-    selectedFile = null
   }
+
+  uploadBtn.addEventListener('click', uploadImage);
 </script>
 
 </html>

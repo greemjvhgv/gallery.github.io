@@ -238,7 +238,7 @@
       console.error('Error getting session:', error);
     }
     if (!session) {
-      window.location.href = 'main.html';
+      window.location.href = 'index.html';
       return;
     }
     updateUIForAuth(session);
@@ -249,7 +249,7 @@
   supabaseClient.auth.onAuthStateChange((event, session) => {
     console.log('Auth state changed:', event, session);
     if (event === 'SIGNED_OUT') {
-      window.location.href = 'main.html';
+      window.location.href = 'index.html';
       return;
     }
     if (session) {
@@ -317,12 +317,42 @@
     return url;
   }
 
+  //LOADING PLACEHOLDERS
+  const SKELETON_COUNT = 12;
+
+  function randomPlaceholderHeight() {
+    return 180 + Math.floor(Math.random() * 200); // 180-380px, so the masonry looks natural
+  }
+
+  function showPhotoSkeletons(target) {
+    target.innerHTML = "";
+    for (let i = 0; i < SKELETON_COUNT; i++) {
+      const skeleton = document.createElement('div');
+      skeleton.className = 'photo-container photo-skeleton';
+      skeleton.style.height = `${randomPlaceholderHeight()}px`;
+      target.appendChild(skeleton);
+    }
+  }
+
+  // Shimmer on the card until its image has downloaded, then fade the image in
+  function trackImageLoad(container, img) {
+    container.classList.add('is-loading');
+    container.style.minHeight = `${randomPlaceholderHeight()}px`;
+    const done = () => {
+      container.classList.remove('is-loading');
+      container.style.minHeight = '';
+    };
+    img.addEventListener('load', done, { once: true });
+    img.addEventListener('error', done, { once: true });
+  }
+
   function renderPhotoCard(photo, index) {
     const container = document.createElement('div');
     container.classList.add('photo-container');
     container.classList.toggle('can-delete', isAdmin);
 
     const img = document.createElement('img');
+    trackImageLoad(container, img);
     img.src = getThumbUrl(photo.image_url, 500);
     if (index !== undefined && index < 6) {
       img.loading = 'eager';
@@ -480,12 +510,15 @@
   });
 
   async function loadPhotos() {
+    showPhotoSkeletons(gallery);
+
     const { data, error } = await supabaseClient
       .from('photos')
       .select();
 
     if (error) {
       console.error('Error loading photos:', error);
+      gallery.innerHTML = "";
       return;
     }
 

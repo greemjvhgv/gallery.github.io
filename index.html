@@ -38,10 +38,28 @@
     return copy.slice(0, n);
   }
 
+  function randomPlaceholderHeight() {
+    return 160 + Math.floor(Math.random() * 180);
+  }
+
+  function showPhotoSkeletons() {
+    gallery.innerHTML = "";
+    for (let i = 0; i < 18; i++) {
+      const skeleton = document.createElement('div');
+      skeleton.className = 'photo-container photo-skeleton';
+      skeleton.style.height = `${randomPlaceholderHeight()}px`;
+      gallery.appendChild(skeleton);
+    }
+  }
+
   async function loadPreview() {
+    showPhotoSkeletons();
+
     const { data, error } = await supabaseClient
       .from('photos')
       .select('id, image_url');
+
+    gallery.innerHTML = "";
 
     if (error) {
       console.error('Error loading photos:', error);
@@ -49,6 +67,8 @@
     }
 
     function getThumbUrl(url, width) {
+      // Supabase image transformation is not enabled on this project's plan,
+      // so thumbnails just use the original file.
       return url;
     }
 
@@ -57,6 +77,14 @@
       container.classList.add('photo-container');
 
       const img = document.createElement('img');
+      container.classList.add('is-loading');
+      container.style.minHeight = `${randomPlaceholderHeight()}px`;
+      const done = () => {
+        container.classList.remove('is-loading');
+        container.style.minHeight = '';
+      };
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
       img.src = getThumbUrl(photo.image_url, 400);
       img.loading = i < 6 ? 'eager' : 'lazy';
       img.decoding = 'async';
