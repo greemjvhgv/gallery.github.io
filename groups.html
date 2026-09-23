@@ -2,8 +2,11 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Group Page</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,15 +15,64 @@
     <div class="navbar">
         <div class="navbar-brand">PINSTA</div>
         <a href="gallery.html">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+            </svg>
             Gallery
+        </a>
+        <a href="groups.html" class="active" aria-current="page">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="7" width="14" height="14" rx="1" />
+                <path d="M7 7V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-3" />
+            </svg>
+            Group Gallery
+        </a>
+        <a href="#" id="logoutBtn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="M16 17l5-5-5-5" />
+                <path d="M21 12H9" />
+            </svg>
+            Logout
         </a>
     </div>
 
     <div class="main">
-        <h1 id="groupsHeading">Group Gallery</h1>
+        <header class="groups-hero">
+            <p class="groups-eyebrow">Matched sets</p>
+            <h1 id="groupsHeading">Group Gallery</h1>
+            <p class="groups-sub">
+                <span id="groupCount" class="groups-count">&nbsp;</span>
+                <span class="groups-sub-divider" aria-hidden="true"></span>
+                Avatar + banner pairs, ready to use
+            </p>
+        </header>
+
         <p id="message"></p>
         <div id="groupgallery"></div>
+    </div>
+
+    <div id="groupLightbox" class="group-lightbox" aria-hidden="true">
+        <div class="group-lightbox-card" role="dialog" aria-modal="true" aria-label="Group preview">
+            <button type="button" id="lightboxClose" class="group-lightbox-close" aria-label="Close">&times;</button>
+            <div class="group-lightbox-banner"><img id="lightboxBanner" alt="Banner"></div>
+            <div class="group-lightbox-footer">
+                <div class="group-lightbox-profile"><img id="lightboxProfile" alt="Profile picture"></div>
+                <div class="group-lightbox-meta">
+                    <span id="lightboxLabel" class="group-label"></span>
+                    <div class="group-lightbox-links">
+                        <a id="lightboxProfileLink" target="_blank" rel="noopener">Open avatar &#8599;</a>
+                        <a id="lightboxBannerLink" target="_blank" rel="noopener">Open banner &#8599;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <button onclick="topFunction()" id="topBtn">Top</button>
@@ -35,6 +87,14 @@
     const topBtn = document.getElementById("topBtn");
     const groupgallery = document.getElementById('groupgallery');
     const message = document.getElementById('message');
+    const groupCount = document.getElementById('groupCount');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const lightbox = document.getElementById('groupLightbox');
+    const lightboxBanner = document.getElementById('lightboxBanner');
+    const lightboxProfile = document.getElementById('lightboxProfile');
+    const lightboxLabel = document.getElementById('lightboxLabel');
+    const lightboxProfileLink = document.getElementById('lightboxProfileLink');
+    const lightboxBannerLink = document.getElementById('lightboxBannerLink');
 
     window.onscroll = function () { scrollFunction() };
 
@@ -48,8 +108,7 @@
 
     topBtn.addEventListener("click", topFunction);
     function topFunction() {
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     //AUTHENTICATION STUFF------------------------------------------------------------------------------------------------------------------------------------------------
@@ -115,58 +174,174 @@
         }
     });
 
+    logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+            console.error('Error logging out:', error.message);
+            alert(`Error logging out: ${error.message}`);
+            return;
+        }
+        window.location.href = 'index.html';
+    });
+
     //GALLERY STUFF------------------------------------------------------------------------------------------------------------------------------------------------
+    const SKELETON_COUNT = 4;
+
     function getThumbUrl(url, width) {
         return url;
     }
 
+    function formatIndex(i) {
+        return String(i + 1).padStart(2, '0');
+    }
+
+    function updateCount(total) {
+        groupCount.textContent = `${total} ${total === 1 ? 'group' : 'groups'}`;
+    }
+
+    function showSkeletons() {
+        groupgallery.innerHTML = "";
+        for (let i = 0; i < SKELETON_COUNT; i++) {
+            const skeleton = document.createElement('div');
+            skeleton.className = 'group-container group-skeleton';
+            skeleton.innerHTML = `
+                <div class="banner-div"></div>
+                <div class="group-footer">
+                    <div class="profile-div"></div>
+                    <div class="group-meta"><span></span><span></span></div>
+                </div>`;
+            groupgallery.appendChild(skeleton);
+        }
+    }
+
+    function showEmptyState() {
+        groupgallery.innerHTML = `
+            <div class="groups-empty">
+                <p class="groups-empty-title">No groups yet</p>
+                <p>Use <strong>Group Mode</strong> in the gallery to pair an avatar with a banner.</p>
+                <a href="gallery.html" class="back-link">Go to Gallery</a>
+            </div>`;
+    }
+
+    function openLightbox(group, label) {
+        lightboxBanner.src = group.banner_url;
+        lightboxProfile.src = group.profile_url;
+        lightboxLabel.textContent = label;
+        lightboxProfileLink.href = group.profile_url;
+        lightboxBannerLink.href = group.banner_url;
+        lightbox.classList.add('open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        lightbox.classList.remove('open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox();
+    });
+    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
+    });
+
+    function renderGroupCard(group, i) {
+        const label = `Set ${formatIndex(i)}`;
+
+        const container = document.createElement("div");
+        container.classList.add("group-container");
+        container.classList.toggle('can-delete', isAdmin);
+        container.dataset.groupId = group.id;
+        container.style.setProperty('--i', Math.min(i, 12));
+        container.tabIndex = 0;
+        container.setAttribute('role', 'button');
+        container.setAttribute('aria-label', `View ${label}`);
+
+        const bannerDiv = document.createElement('div');
+        bannerDiv.className = 'banner-div';
+        const bannerImg = document.createElement('img');
+        bannerImg.className = 'bannerImg';
+        bannerImg.src = getThumbUrl(group.banner_url, 800);
+        bannerImg.alt = '';
+        bannerImg.loading = i < 4 ? 'eager' : 'lazy';
+        bannerImg.decoding = 'async';
+        bannerDiv.appendChild(bannerImg);
+
+        const footer = document.createElement('div');
+        footer.className = 'group-footer';
+
+        const profileDiv = document.createElement('div');
+        profileDiv.className = 'profile-div';
+        const profileImg = document.createElement('img');
+        profileImg.className = 'profileImg';
+        profileImg.src = getThumbUrl(group.profile_url, 400);
+        profileImg.alt = '';
+        profileImg.loading = i < 4 ? 'eager' : 'lazy';
+        profileImg.decoding = 'async';
+        profileDiv.appendChild(profileImg);
+
+        const meta = document.createElement('div');
+        meta.className = 'group-meta';
+        meta.innerHTML = `
+            <span class="group-label">${label}</span>
+            <span class="group-view">View &#8599;</span>`;
+
+        footer.appendChild(profileDiv);
+        footer.appendChild(meta);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = "delete";
+        button.classList.add('delete-button');
+        button.addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteGroup(group);
+        });
+
+        container.addEventListener('click', () => openLightbox(group, label));
+        container.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openLightbox(group, label);
+            }
+        });
+
+        container.appendChild(button);
+        container.appendChild(bannerDiv);
+        container.appendChild(footer);
+        return container;
+    }
+
     async function loadGroups() {
+        showSkeletons();
 
         const { data, error } = await supabaseClient
             .from('groups')
             .select();
 
         if (error) {
-            console.error('Error loading photos:', error);
+            console.error('Error loading groups:', error);
+            groupgallery.innerHTML = "";
+            message.textContent = "Couldn't load groups. Please refresh the page.";
+            return;
+        }
+
+        groupgallery.innerHTML = "";
+        updateCount(data.length);
+
+        if (data.length === 0) {
+            showEmptyState();
             return;
         }
 
         data.forEach((group, i) => {
-            const container = document.createElement("div");
-            container.classList.add("group-container");
-            container.dataset.groupId = group.id;
-
-            const profileDiv = document.createElement('div');
-            profileDiv.className = 'profile-div';
-            const profileImg = document.createElement('img');
-            profileImg.className = 'profileImg';
-            profileImg.src = getThumbUrl(group.profile_url, 400);
-            profileImg.loading = i < 4 ? 'eager' : 'lazy';
-            profileImg.decoding = 'async';
-
-            const bannerDiv = document.createElement('div');
-            bannerDiv.className = 'banner-div';
-            const bannerImg = document.createElement('img');
-            bannerImg.className = 'bannerImg';
-            bannerImg.src = getThumbUrl(group.banner_url, 800);
-            bannerImg.loading = i < 4 ? 'eager' : 'lazy';
-            bannerImg.decoding = 'async';
-
-            const button = document.createElement('button');
-            button.className = "del";
-            button.textContent = "delete";
-            button.classList.add('delete-button');
-            button.addEventListener("click", () => {
-                deleteGroup(group)
-            });
-
-            bannerDiv.appendChild(bannerImg);
-            profileDiv.appendChild(profileImg);
-            container.appendChild(button);
-            container.appendChild(bannerDiv);
-            container.appendChild(profileDiv);
-            groupgallery.appendChild(container);
+            groupgallery.appendChild(renderGroupCard(group, i));
         });
+
         const { data: { session } } = await supabaseClient.auth.getSession();
         updateUIForAuth(session);
     }
@@ -176,6 +351,7 @@
             alert('Only admins can delete groups.');
             return;
         }
+        if (!confirm('Delete this group?')) return;
 
         const { error } = await supabaseClient
             .from('groups')
@@ -190,9 +366,13 @@
 
         const container = document.querySelector(`.group-container[data-group-id="${group.id}"]`);
         container.remove();
+
+        const remaining = groupgallery.querySelectorAll('.group-container').length;
+        updateCount(remaining);
+        if (remaining === 0) showEmptyState();
     }
 
     loadGroups();
 </script>
 
-</html>>
+</html>
