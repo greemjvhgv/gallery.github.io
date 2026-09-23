@@ -2,6 +2,7 @@
 <head>
   <title>Landing Page</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="main.css">
 </head>
@@ -47,12 +48,19 @@
       return;
     }
 
-    pickRandom(data, PREVIEW_COUNT).forEach(photo => {
+    function getThumbUrl(url, width) {
+      return url;
+    }
+
+    pickRandom(data, PREVIEW_COUNT).forEach((photo, i) => {
       const container = document.createElement('div');
       container.classList.add('photo-container');
 
       const img = document.createElement('img');
-      img.src = photo.image_url;
+      img.src = getThumbUrl(photo.image_url, 400);
+      img.loading = i < 6 ? 'eager' : 'lazy';
+      img.decoding = 'async';
+      if (i < 6) img.fetchPriority = 'high';
       img.alt = '';
 
       container.appendChild(img);
